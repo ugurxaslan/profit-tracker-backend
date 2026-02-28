@@ -32,7 +32,6 @@ import lombok.Setter;
 @Setter 
 @NoArgsConstructor
 @AllArgsConstructor
-
 @Builder
 @Entity
 @Table(name = "users")
