@@ -1,7 +1,7 @@
+package com.ugurxaslan.profit_tracker_backend.config;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-
-package com.ugurxaslan.profit_tracker_backend.config;
 
 
 @Configuration
