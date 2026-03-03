@@ -81,7 +81,7 @@ public class User extends BaseEntity {
     public void prePersist() {
 
         //Default wallet oluşturulması
-        if (this.walletList.isEmpty()) {
+        if (this.walletList==null || this.walletList.isEmpty()) {
             
             Wallet defaultWallet = Wallet.builder()
                 .user(this)
