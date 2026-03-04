@@ -19,7 +19,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
@@ -77,17 +76,4 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Wallet> walletList = new ArrayList<>();
 
-    @PrePersist
-    public void prePersist() {
-
-        //Default wallet oluşturulması
-        if (this.walletList==null || this.walletList.isEmpty()) {
-            
-            Wallet defaultWallet = Wallet.builder()
-                .user(this)
-                .build();
-            this.walletList.add(defaultWallet);
-    
-        }
-    }
 }
