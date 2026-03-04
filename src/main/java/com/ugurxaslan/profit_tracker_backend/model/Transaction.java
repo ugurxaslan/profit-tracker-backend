@@ -16,10 +16,10 @@
     @Entity
     @Table(name = "transactions")
     public class Transaction extends BaseEntity {
-    
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private TransactionType transactionType;
+        
+        @Enumerated(EnumType.STRING)
+        @Column(name = "type", nullable = false)
+        private TransactionType transactionType;
 
         @Column(name = "quantity", nullable = false, precision = 19, scale = 8,updatable = false)
         private BigDecimal quantity;    
@@ -45,5 +45,8 @@
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumn(name = "asset_id", nullable = false)
         private Asset asset;
+
+        @OneToOne(mappedBy = "transaction", orphanRemoval = true, fetch = FetchType.LAZY)
+        private AssetLot assetLot;
 
     }

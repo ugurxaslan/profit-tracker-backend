@@ -23,14 +23,14 @@ public class AssetLot extends BaseEntity {
     // Relationships
     
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "wallet_id", nullable = false)
-    private Wallet wallet;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
     @OneToOne(fetch = FetchType.LAZY,optional = false)
-    @JoinColumn(name = "buy_transaction_id",nullable = false)
+    @JoinColumn(name = "transaction_id",nullable = false)
     private Transaction transaction;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "wallet_asset_id", nullable = false)
+    private WalletAsset walletAsset;
 }
