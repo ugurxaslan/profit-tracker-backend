@@ -32,5 +32,5 @@ public class AssetLot extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY,optional = false)
     @JoinColumn(name = "buy_transaction_id",nullable = false)
-    private Transaction buyTransaction;
+    private Transaction transaction;
 }
