@@ -13,6 +13,7 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
     Optional<Asset> findBySymbol(String symbol);
 
     boolean existsBySymbol(String symbol);
+    
     boolean existsByName(String name);
     
 }
