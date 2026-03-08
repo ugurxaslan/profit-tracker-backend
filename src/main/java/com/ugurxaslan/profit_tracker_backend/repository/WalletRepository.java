@@ -11,7 +11,7 @@ import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 @Repository
 public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
-    List<Wallet> findByUser_Id(Long userId);
+    List<Wallet> findAllByUserId(Long userId);
 
     Optional<Wallet> findByUser_IdAndWalletName(Long userId, String walletName);
 
