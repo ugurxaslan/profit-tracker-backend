@@ -30,6 +30,10 @@ public class UserService {
 
 	@Transactional
 	public UserResponseDTO createUser(UserRequestDTO requestDTO) {
+		if (userRepository.existsByUsername(requestDTO.getUsername())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already in use");
+		}
+
 		if (userRepository.existsByEmail(requestDTO.getEmail())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
 		}
@@ -64,8 +68,14 @@ public class UserService {
 	}
 
 	public UserResponseDTO updateUser(@NonNull Long id, UserRequestDTO requestDTO) {
+
 		User existingUser = userRepository.findById(id)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+		if (!existingUser.getUsername().equalsIgnoreCase(requestDTO.getUsername())
+				&& userRepository.existsByUsername(requestDTO.getUsername())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already in use");
+		}
 
 		if (!existingUser.getEmail().equalsIgnoreCase(requestDTO.getEmail())
 				&& userRepository.existsByEmail(requestDTO.getEmail())) {
