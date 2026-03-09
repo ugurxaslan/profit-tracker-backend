@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter 
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,17 +36,20 @@ import lombok.Setter;
 @Table(name = "users")
 public class User extends BaseEntity {
 
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
     @Column(name = "first_name", nullable = false)
     private String firstName;
 
     @Column(name = "last_name", nullable = false)
     private String lastName;
-    
+
     @Column(name = "email", nullable = false, unique = true)
     @Email(message = "Email should be valid")
     private String email;
 
-    @Builder.Default//burda gerek yok ama kalsın
+    @Builder.Default // burda gerek yok ama kalsın
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
@@ -56,10 +59,8 @@ public class User extends BaseEntity {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @ElementCollection(targetClass = UserRole.class)
-    @CollectionTable(
-        name = "user_roles", 
-        joinColumns = @JoinColumn(name = "user_id", nullable = false))
-    @Column(name = "role_name", nullable = false )
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id", nullable = false))
+    @Column(name = "role_name", nullable = false)
     private Set<UserRole> roles = new HashSet<>(Set.of(UserRole.USER));
 
     @Builder.Default
@@ -70,8 +71,8 @@ public class User extends BaseEntity {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    //Relationships
-    
+    // Relationships
+
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Wallet> walletList = new ArrayList<>();
