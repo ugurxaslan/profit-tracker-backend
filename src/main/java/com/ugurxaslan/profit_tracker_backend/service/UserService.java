@@ -1,6 +1,7 @@
 package com.ugurxaslan.profit_tracker_backend.service;
 
-import com.ugurxaslan.profit_tracker_backend.dto.request.UserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.UpdateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.mapper.UserMapper;
 import com.ugurxaslan.profit_tracker_backend.model.User;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -29,7 +31,7 @@ public class UserService {
 	private final BCryptPasswordEncoder passwordEncoder;
 
 	@Transactional
-	public UserResponseDTO createUser(UserRequestDTO requestDTO) {
+	public UserResponseDTO createUser(CreateUserRequestDTO requestDTO) {
 		if (userRepository.existsByUsername(requestDTO.getUsername())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already in use");
 		}
@@ -38,7 +40,7 @@ public class UserService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
 		}
 
-		User user = userMapper.toEntity(requestDTO);
+		User user = userMapper.toEntityForCreate(requestDTO);
 		user.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
 
 		// default wallet
@@ -67,7 +69,7 @@ public class UserService {
 				.toList();
 	}
 
-	public UserResponseDTO updateUser(@NonNull Long id, UserRequestDTO requestDTO) {
+	public UserResponseDTO updateUser(@NonNull Long id, UpdateUserRequestDTO requestDTO) {
 
 		User existingUser = userRepository.findById(id)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -82,8 +84,10 @@ public class UserService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
 		}
 
-		userMapper.updateEntityFromDto(requestDTO, existingUser);
-		existingUser.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+		userMapper.toEntityForUpdate(requestDTO, existingUser);
+		if (StringUtils.hasText(requestDTO.getPassword())) {
+			existingUser.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+		}
 
 		User updatedUser = userRepository.save(existingUser);
 		return userMapper.toResponse(updatedUser);

@@ -1,6 +1,7 @@
 package com.ugurxaslan.profit_tracker_backend.mapper;
 
-import com.ugurxaslan.profit_tracker_backend.dto.request.UserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.UpdateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.model.User;
 import org.mapstruct.*;
@@ -10,12 +11,12 @@ public interface UserMapper {
 
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "walletList", ignore = true)
-    User toEntity(UserRequestDTO requestDTO);
+    User toEntityForCreate(CreateUserRequestDTO requestDTO);
 
     UserResponseDTO toResponse(User user);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "walletList", ignore = true)
-    void updateEntityFromDto(UserRequestDTO dto, @MappingTarget User entity);
+    void toEntityForUpdate(UpdateUserRequestDTO dto, @MappingTarget User entity);
 }

@@ -1,6 +1,7 @@
 package com.ugurxaslan.profit_tracker_backend.controller;
 
-import com.ugurxaslan.profit_tracker_backend.dto.request.UserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.UpdateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.service.UserService;
 import jakarta.validation.Valid;
@@ -26,7 +27,7 @@ public class UserController {
 	private final UserService userService;
 
 	@PostMapping
-	public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserRequestDTO requestDTO) {
+	public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody CreateUserRequestDTO requestDTO) {
 		UserResponseDTO createdUser = userService.createUser(requestDTO);
 		return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
 	}
@@ -46,7 +47,7 @@ public class UserController {
 	@PutMapping("/{id}")
 	public ResponseEntity<UserResponseDTO> updateUser(
 			@PathVariable Long id,
-			@Valid @RequestBody UserRequestDTO requestDTO) {
+			@Valid @RequestBody UpdateUserRequestDTO requestDTO) {
 		UserResponseDTO updatedUser = userService.updateUser(id, requestDTO);
 		return ResponseEntity.ok(updatedUser);
 	}
