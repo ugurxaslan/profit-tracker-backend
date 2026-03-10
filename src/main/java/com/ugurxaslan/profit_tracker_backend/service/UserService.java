@@ -11,7 +11,7 @@ import com.ugurxaslan.profit_tracker_backend.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -28,7 +28,7 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
-	private final BCryptPasswordEncoder passwordEncoder;
+	private final PasswordEncoder passwordEncoder;
 
 	@Transactional
 	public UserResponseDTO createUser(CreateUserRequestDTO requestDTO) {
