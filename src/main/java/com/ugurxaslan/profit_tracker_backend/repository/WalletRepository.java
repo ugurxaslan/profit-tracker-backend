@@ -11,9 +11,13 @@ import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 @Repository
 public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
-    List<Wallet> findAllByUserId(Long userId);
+    List<Wallet> findAllByUser_Username(String username);
 
-    Optional<Wallet> findByUser_IdAndWalletName(Long userId, String walletName);
+    Optional<Wallet> findByIdAndUser_Username(Long walletId, String username);
 
-    boolean existsByUser_IdAndWalletName(Long userId, String walletName);
+    Optional<Wallet> findByUser_UsernameAndWalletName(String username, String walletName);
+
+    boolean existsByUser_UsernameAndWalletName(String username, String walletName);
+
+    boolean existsByIdAndUser_Username(Long walletId, String username);
 }
