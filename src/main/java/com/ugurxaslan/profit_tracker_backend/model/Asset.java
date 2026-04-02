@@ -18,13 +18,13 @@ import lombok.Setter;
 @Table(name = "assets")
 public class Asset extends BaseEntity {
 
-    @Column(name = "name",nullable = false, unique = true,updatable = false)
+    @Column(name = "name", nullable = false, unique = true, updatable = false)
     private String name;
 
-    @Column(name = "symbol",nullable = false, unique = true,updatable = false)
+    @Column(name = "symbol", nullable = false, unique = true, updatable = false)
     private String symbol;
 
-    @Column(name = "current_price", nullable = false, precision = 19, scale = 2) 
+    @Column(name = "current_price", nullable = false, precision = 19, scale = 2)
     private BigDecimal currentPrice;
-    
+
 }
