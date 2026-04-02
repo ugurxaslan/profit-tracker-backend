@@ -33,7 +33,7 @@ public class AssetLotService {
                 .isClosed(false)
                 .build();
 
-        return assetLotRepository.save(Objects.requireNonNull(assetLotToSave));
+        return assetLotRepository.saveAndFlush(Objects.requireNonNull(assetLotToSave));
     }
 
     @Transactional(readOnly = true)
@@ -54,7 +54,7 @@ public class AssetLotService {
         existingAssetLot.setRemainingQuantity(newRemainingQuantity);
         existingAssetLot.setClosed(newRemainingQuantity.compareTo(BigDecimal.ZERO) == 0);
 
-        return assetLotRepository.save(existingAssetLot);
+        return assetLotRepository.saveAndFlush(existingAssetLot);
     }
 
     public void deleteAssetLot(@NonNull Long id) {
@@ -70,24 +70,34 @@ public class AssetLotService {
     }
 
     // iç servis
-    @Transactional(readOnly = true)
+    @Transactional
     public AssetLot getAssetLotEntityById(@NonNull Long id) {
         return assetLotRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Asset lot not found"));
     }
 
-    public void sellAssetLot(@NonNull Long walletAssetId, @NonNull BigDecimal quantity) {
-        consumeAssetLots(walletAssetId, quantity, "sell");
+    @Transactional
+    public void sellAssetLot(@NonNull Long walletAssetId, @NonNull BigDecimal quantity,
+            Long optionalSellTransactionId) {
+        consumeAssetLots(walletAssetId, quantity, "sell", optionalSellTransactionId);
     }
 
     @Transactional
     public void cashOutAssetLots(@NonNull Long walletAssetId, @NonNull BigDecimal amount) {
-        consumeAssetLots(walletAssetId, amount, "cash out");
+        consumeAssetLots(walletAssetId, amount, "cash out", null);
     }
 
+    @Transactional
     private void consumeAssetLots(@NonNull Long walletAssetId, @NonNull BigDecimal amount,
-            @NonNull String operationName) {
+            @NonNull String operationName, Long optionalSellTransactionId) {
         List<AssetLot> assetLots = getOpenAssetLots(walletAssetId);
+
+        if (optionalSellTransactionId == null) {
+            assetLots = getOpenAssetLots(walletAssetId);
+        } else {
+            assetLots.add(assetLotRepository.findByTransaction_Id(optionalSellTransactionId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Asset lot not found")));
+        }
 
         BigDecimal totalAvailable = assetLots.stream()
                 .map(AssetLot::getRemainingQuantity)
@@ -112,16 +122,14 @@ public class AssetLotService {
                 lot.setRemainingQuantity(lotQty.subtract(remainingAmount));
                 remainingAmount = BigDecimal.ZERO;
             }
-            assetLotRepository.save(lot);
+            assetLotRepository.saveAndFlush(lot);
         }
     }
 
-    public Boolean isSellable(Long sellTransactionId, BigDecimal quantity) {
-        if (sellTransactionId == null) {
-            return true;
-        }
+    public Boolean transactionIsSellable(@NonNull Long sellTransactionId, @NonNull BigDecimal quantity) {
         AssetLot assetLot = assetLotRepository.findByTransaction_Id(sellTransactionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Asset lot not found"));
         return assetLot.getRemainingQuantity().compareTo(quantity) >= 0;
     }
+
 }
