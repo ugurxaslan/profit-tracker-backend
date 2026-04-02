@@ -19,6 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -55,10 +56,7 @@ public class UserService {
 
 	@Transactional(readOnly = true)
 	public UserResponseDTO getUserById(@NonNull Long id) {
-		User user = userRepository.findById(id)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-		return userMapper.toResponse(user);
+		return userMapper.toResponse(getUserEntityById(id));
 	}
 
 	@Transactional(readOnly = true)
@@ -70,9 +68,7 @@ public class UserService {
 	}
 
 	public UserResponseDTO updateUser(@NonNull Long id, UpdateUserRequestDTO requestDTO) {
-
-		User existingUser = userRepository.findById(id)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+		User existingUser = getUserEntityById(id);
 
 		if (!existingUser.getUsername().equalsIgnoreCase(requestDTO.getUsername())
 				&& userRepository.existsByUsername(requestDTO.getUsername())) {
@@ -94,9 +90,19 @@ public class UserService {
 	}
 
 	public void deleteUser(@NonNull Long id) {
-		if (!userRepository.existsById(id)) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-		}
-		userRepository.deleteById(id);
+		User user = getUserEntityById(id);
+		userRepository.delete(Objects.requireNonNull(user));
+	}
+
+	@Transactional(readOnly = true)
+	public User getUserEntityById(@NonNull Long id) {
+		return userRepository.findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+	}
+
+	@Transactional(readOnly = true)
+	public User getUserEntityByUsername(@NonNull String username) {
+		return userRepository.findByUsername(username)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 	}
 }
