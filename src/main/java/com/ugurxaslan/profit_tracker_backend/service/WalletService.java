@@ -5,30 +5,33 @@ import com.ugurxaslan.profit_tracker_backend.dto.response.WalletResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.mapper.WalletMapper;
 import com.ugurxaslan.profit_tracker_backend.model.User;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
-import com.ugurxaslan.profit_tracker_backend.repository.UserRepository;
 import com.ugurxaslan.profit_tracker_backend.repository.WalletRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class WalletService {
 
     private final WalletRepository walletRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final WalletMapper walletMapper;
 
     @Transactional
     public WalletResponseDTO createWallet(@NonNull String currentUsername, @NonNull WalletRequestDTO requestDTO) {
-        User user = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        User user = userService.getUserEntityByUsername(currentUsername);
 
         String requestedName = requestDTO.getName().trim();
         if (walletRepository.existsByUser_UsernameAndWalletName(currentUsername, requestedName)) {
@@ -39,56 +42,81 @@ public class WalletService {
                 .walletName(requestedName)
                 .user(user)
                 .build();
-
-        // TODO: Recalculate wallet balances before save.
-
-        Wallet savedWallet = walletRepository.save(wallet);
+        Wallet savedWallet = recalculateWalletTotalsAndSave(wallet);
         return walletMapper.toResponse(savedWallet);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public WalletResponseDTO getWalletById(@NonNull Long walletId) {
+
         Wallet wallet = walletRepository.findById(walletId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet not found"));
-
-        // TODO: Recalculate wallet balances before response.
+        recalculateWalletTotalsAndSave(wallet);
         return walletMapper.toResponse(wallet);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<WalletResponseDTO> getAllWallets(@NonNull String currentUsername) {
         return walletRepository.findAllByUser_Username(currentUsername)
                 .stream()
-                // TODO: Recalculate wallet balances for each wallet before response.
+                .peek(this::recalculateWalletTotalsAndSave)
                 .map(walletMapper::toResponse)
                 .toList();
     }
 
-    public WalletResponseDTO updateWallet(@NonNull Long walletId, @NonNull WalletRequestDTO requestDTO) {
-        Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet not found"));
+    @Transactional
+    public WalletResponseDTO updateWalletName(@NonNull Long walletId, @NonNull WalletRequestDTO requestDTO) {
+        Wallet wallet = getWalletEntityById(walletId);
 
-        String currentUsername = wallet.getUser().getUsername();
-
-        String requestedName = requestDTO.getName().trim();
-
-        if (wallet.getWalletName().equalsIgnoreCase(requestedName)) {
-            return walletMapper.toResponse(wallet);
-        }
-
-        if (walletRepository.existsByUser_UsernameAndWalletName(currentUsername, requestedName)) {
+        if (walletRepository.existsByUser_UsernameAndWalletName(wallet.getUser().getUsername(),
+                requestDTO.getName().trim())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Wallet name already exists");
         }
 
-        wallet.setWalletName(requestedName);
-        Wallet updatedWallet = walletRepository.save(wallet);
-        return walletMapper.toResponse(updatedWallet);
+        wallet.setWalletName(requestDTO.getName().trim());
+        Wallet savedWallet = Objects.requireNonNull(walletRepository.save(wallet));
+        return walletMapper.toResponse(savedWallet);
     }
 
+    @Transactional
     public void deleteWallet(@NonNull Long walletId) {
-        Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet not found"));
 
-        walletRepository.delete(wallet);
+        Wallet wallet = getWalletEntityById(walletId);
+
+        walletRepository.delete(Objects.requireNonNull(wallet));
     }
+
+    // servisler arası entity aktarımı için
+    @Transactional
+    public Wallet getWalletEntityById(@NonNull Long walletId) {
+        return walletRepository.findById(walletId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet not found"));
+    }
+
+    public Wallet syncWallet(@NonNull Long walletId) {
+        Wallet wallet = getWalletEntityById(walletId);
+        Wallet updatedWallet = this.recalculateWalletTotalsAndSave(wallet);
+        return updatedWallet;
+    }
+
+    @Transactional
+    private Wallet recalculateWalletTotalsAndSave(@NonNull Wallet wallet) {
+        BigDecimal newCashBalance = wallet.getWalletAssets().stream()
+                .filter(wa -> wa.getAsset().getSymbol().equalsIgnoreCase("TRY"))
+                .map(wa -> wa.getTotalCost())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal newPortfolioValue = wallet.getWalletAssets().stream()
+                .filter(wa -> !wa.getAsset().getSymbol().equalsIgnoreCase("TRY"))
+                .map(wa -> wa.getTotalValue())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        log.info("Recalculating wallet totals for walletId={}, newCashBalance={}, newPortfolioValue={}",
+                wallet.getId(), newCashBalance, newPortfolioValue);
+        wallet.setCash(newCashBalance);
+        wallet.setPortfolioValue(newPortfolioValue);
+        wallet.setTotalValue(newCashBalance.add(newPortfolioValue));
+        Wallet savedWallet = Objects.requireNonNull(walletRepository.save(wallet));
+        return savedWallet;
+    }
+
 }
