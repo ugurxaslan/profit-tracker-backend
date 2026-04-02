@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @Table(name = "asset_lots")
 public class AssetLot extends BaseEntity {
 
-    @Column(name = "remaining_quantity", nullable = false, precision = 19, scale = 8)
+    @Column(name = "remaining_quantity", nullable = false, precision = 19, scale = 2)
     private BigDecimal remainingQuantity;
 
     @Builder.Default
@@ -21,13 +21,13 @@ public class AssetLot extends BaseEntity {
     private boolean isClosed = false;
 
     // Relationships
-    
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
-    @OneToOne(fetch = FetchType.LAZY,optional = false)
-    @JoinColumn(name = "transaction_id",nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "transaction_id", nullable = false)
     private Transaction transaction;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

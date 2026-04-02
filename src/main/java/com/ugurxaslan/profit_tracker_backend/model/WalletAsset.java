@@ -39,15 +39,15 @@ public class WalletAsset extends BaseEntity {
     private BigDecimal totalValue = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(name = "quantity", nullable = false, precision = 19, scale = 8)
+    @Column(name = "quantity", nullable = false, precision = 19, scale = 2)
     private BigDecimal quantity = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(name = "profit_loss", nullable = false, precision = 19, scale = 8)
+    @Column(name = "profit_loss", nullable = false, precision = 19, scale = 2)
     private BigDecimal profitLoss = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(name = "p_l_percentage", nullable = false, precision = 19, scale = 8)
+    @Column(name = "p_l_percentage", nullable = false, precision = 19, scale = 2)
     private BigDecimal profitLossPercentage = BigDecimal.ZERO;
 
     // Relationships

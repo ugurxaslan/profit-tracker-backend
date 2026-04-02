@@ -1,52 +1,52 @@
-    package com.ugurxaslan.profit_tracker_backend.model;
+package com.ugurxaslan.profit_tracker_backend.model;
 
-    import java.math.BigDecimal;
-    import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
-    import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
+import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
 
-    import jakarta.persistence.*;
-    import lombok.*;
+import jakarta.persistence.*;
+import lombok.*;
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    @Entity
-    @Table(name = "transactions")
-    public class Transaction extends BaseEntity {
-        
-        @Enumerated(EnumType.STRING)
-        @Column(name = "type", nullable = false)
-        private TransactionType transactionType;
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "transactions")
+public class Transaction extends BaseEntity {
 
-        @Column(name = "quantity", nullable = false, precision = 19, scale = 8,updatable = false)
-        private BigDecimal quantity;    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private TransactionType transactionType;
 
-        @Column(name = "unit_cost", nullable = false, precision = 19, scale =2,updatable = false)
-        private BigDecimal unitCost;
+    @Column(name = "quantity", nullable = false, precision = 19, scale = 2, updatable = false)
+    private BigDecimal quantity;
 
-        @Column(name = "total_cost", nullable = false, precision = 19, scale = 2,updatable = false)
-        private BigDecimal totalCost;
+    @Column(name = "unit_cost", nullable = false, precision = 19, scale = 2, updatable = false)
+    private BigDecimal unitCost;
 
-        @Column(name = "fee", precision = 19, scale = 2)
-        private BigDecimal fee;
+    @Column(name = "total_cost", nullable = false, precision = 19, scale = 2, updatable = false)
+    private BigDecimal totalCost;
 
-        @Column(name = "transaction_date", nullable = false)
-        private LocalDateTime transactionDate;
+    @Column(name = "fee", precision = 19, scale = 2)
+    private BigDecimal fee;
 
-        // Relationships
+    @Column(name = "transaction_date", nullable = false)
+    private LocalDateTime transactionDate;
 
-        @ManyToOne(fetch = FetchType.LAZY, optional = false)
-        @JoinColumn(name = "wallet_id", nullable = false)
-        private Wallet wallet;
+    // Relationships
 
-        @ManyToOne(fetch = FetchType.LAZY, optional = false)
-        @JoinColumn(name = "asset_id", nullable = false)
-        private Asset asset;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "wallet_id", nullable = false)
+    private Wallet wallet;
 
-        @OneToOne(mappedBy = "transaction", orphanRemoval = true, fetch = FetchType.LAZY)
-        private AssetLot assetLot;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "asset_id", nullable = false)
+    private Asset asset;
 
-    }
+    @OneToOne(mappedBy = "transaction", orphanRemoval = true, fetch = FetchType.LAZY)
+    private AssetLot assetLot;
+
+}
