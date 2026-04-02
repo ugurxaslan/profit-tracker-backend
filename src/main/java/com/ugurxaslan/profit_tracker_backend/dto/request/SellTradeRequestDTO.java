@@ -13,13 +13,13 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TradeRequestDTO {
+public class SellTradeRequestDTO {
 
     @NotBlank(message = "Asset symbol must not be blank")
     private String assetSymbol;
 
     @NotNull(message = "Quantity must not be null")
-    @DecimalMin(value = "0.00000001", inclusive = true, message = "Quantity must be greater than 0")
+    @DecimalMin(value = "0.01", inclusive = true, message = "Quantity must be greater than 0")
     private BigDecimal quantity;
 
     @DecimalMin(value = "0.01", inclusive = true, message = "Unit price must be greater than 0")
@@ -30,7 +30,6 @@ public class TradeRequestDTO {
 
     private LocalDateTime transactionDate;
 
-    // SELL icin opsiyonel: belirtilirse bu islemin lotundan satisa baslanir.
-    // Belirtilmezse FIFO uygulanir.
+    // belirtilen transactionun satımasını sağlar
     private Long sellTransactionId;
 }

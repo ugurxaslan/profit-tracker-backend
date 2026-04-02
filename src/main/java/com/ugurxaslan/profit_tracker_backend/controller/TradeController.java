@@ -1,6 +1,7 @@
 package com.ugurxaslan.profit_tracker_backend.controller;
 
-import com.ugurxaslan.profit_tracker_backend.dto.request.TradeRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.SellTradeRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.BuyTradeRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.CashTradeRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.TradeResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
@@ -27,7 +28,7 @@ public class TradeController {
     @PostMapping("/wallets/{walletId}/buy")
     public ResponseEntity<TradeResponseDTO> buy(
             @PathVariable Long walletId,
-            @Valid @RequestBody TradeRequestDTO requestDTO) {
+            @Valid @RequestBody BuyTradeRequestDTO requestDTO) {
         TradeResponseDTO response = tradeService.buy(walletId, requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -36,7 +37,7 @@ public class TradeController {
     @PostMapping("/wallets/{walletId}/sell")
     public ResponseEntity<TradeResponseDTO> sell(
             @PathVariable Long walletId,
-            @Valid @RequestBody TradeRequestDTO requestDTO) {
+            @Valid @RequestBody SellTradeRequestDTO requestDTO) {
         TradeResponseDTO response = tradeService.sell(walletId, requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
