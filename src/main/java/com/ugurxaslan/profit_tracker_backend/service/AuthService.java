@@ -3,7 +3,6 @@ package com.ugurxaslan.profit_tracker_backend.service;
 import com.ugurxaslan.profit_tracker_backend.dto.request.LoginRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.LoginResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.model.User;
-import com.ugurxaslan.profit_tracker_backend.repository.UserRepository;
 import com.ugurxaslan.profit_tracker_backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,13 +14,17 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public LoginResponseDTO login(LoginRequestDTO requestDTO) {
-        User user = userRepository.findByUsername(requestDTO.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+        User user;
+        try {
+            user = userService.getUserEntityByUsername(requestDTO.getUsername());
+        } catch (ResponseStatusException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
 
         if (!passwordEncoder.matches(requestDTO.getPassword(), user.getPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
