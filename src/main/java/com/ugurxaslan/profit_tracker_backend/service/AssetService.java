@@ -24,10 +24,7 @@ public class AssetService {
 
     @Transactional(readOnly = true)
     public AssetResponseDTO getAssetBySymbol(@NonNull String symbol) {
-        Asset asset = assetRepository.findBySymbol(symbol)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Asset not found"));
-
-        return assetMapper.toResponse(asset);
+        return assetMapper.toResponse(getAssetEntityBySymbol(symbol));
     }
 
     @Transactional(readOnly = true)
@@ -44,11 +41,12 @@ public class AssetService {
                 continue;
             }
 
-            Asset asset = assetRepository.findBySymbol(item.symbol())
+            Asset asset = assetRepository.findBySymbol(item.symbol().toUpperCase())
                     .orElseGet(() -> {
                         Asset createdAsset = new Asset();
                         createdAsset
-                                .setName(item.name() == null || item.name().isBlank() ? item.symbol() : item.name());
+                                .setName(item.name() == null || item.name().isBlank() ? item.symbol().toUpperCase()
+                                        : item.name());
                         createdAsset.setSymbol(item.symbol());
                         return createdAsset;
                     });
@@ -59,5 +57,12 @@ public class AssetService {
     }
 
     public record MarketAssetItem(String name, String symbol, BigDecimal currentPrice) {
+    }
+
+    // service arası entity aktarımı için
+    @Transactional(readOnly = true)
+    public Asset getAssetEntityBySymbol(@NonNull String symbol) {
+        return assetRepository.findBySymbol(symbol.trim().toUpperCase())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Asset not found"));
     }
 }
