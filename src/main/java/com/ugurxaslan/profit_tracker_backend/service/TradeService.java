@@ -1,6 +1,7 @@
 package com.ugurxaslan.profit_tracker_backend.service;
 
-import com.ugurxaslan.profit_tracker_backend.dto.request.TradeRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.SellTradeRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.BuyTradeRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.CashTradeRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.TradeResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
@@ -40,18 +41,21 @@ public class TradeService {
         // TODO: sell için : belirtilen transsactiounu satabilme
         // TODO: buy için : alış için bakiye kullan veya direkt ekle
         @Transactional
-        public TradeResponseDTO buy(Long walletId, TradeRequestDTO requestDTO) {
+        public TradeResponseDTO buy(Long walletId, BuyTradeRequestDTO requestDTO) {
 
                 Wallet wallet = walletService.getWalletEntityById(walletId);
+                boolean useCash = requestDTO.getIsUseCash() == null || requestDTO.getIsUseCash();
 
                 WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, "TRY");
 
-                this.cashControlForBuy(requestDTO, cashWalletAsset);
+                if (useCash) {
+                        this.cashControlForBuy(requestDTO, cashWalletAsset);
+                }
 
                 WalletAsset buyWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset buyAsset = buyWalletAsset.getAsset();
 
-                BigDecimal unitPrice = resolveUnitPrice(requestDTO, buyAsset);
+                BigDecimal unitPrice = resolveUnitPrice(requestDTO.getUnitPrice(), buyAsset);
                 BigDecimal totalCost = requestDTO.getQuantity().multiply(unitPrice);
 
                 Transaction buyTransactionToSave = Transaction.builder()
@@ -60,8 +64,8 @@ public class TradeService {
                                 .transactionType(TransactionType.BUY)
                                 .quantity(requestDTO.getQuantity())
                                 .unitCost(unitPrice)
-                                .totalCost(requestDTO.getQuantity().multiply(unitPrice))
-                                .fee(resolveFee(requestDTO))
+                                .totalCost(totalCost)
+                                .fee(resolveFee(requestDTO.getFee()))
                                 .transactionDate(resolveTransactionDate(requestDTO.getTransactionDate()))
                                 .build();
                 Transaction buyTransaction = transactionRepository.save(Objects.requireNonNull(buyTransactionToSave));
@@ -69,10 +73,13 @@ public class TradeService {
                 assetLotService.createAssetLot(buyAsset, buyTransaction, buyWalletAsset, requestDTO.getQuantity());
                 walletAssetService.updateWalletAsset(walletId, buyAsset.getSymbol());
 
-                CashTradeRequestDTO cashOutRequestDTO = CashTradeRequestDTO.builder()
-                                .amount(totalCost)
-                                .build();
-                this.cashOut(walletId, cashOutRequestDTO, TransactionType.TRADE_CASH_OUT);
+                if (useCash) {
+                        CashTradeRequestDTO cashOutRequestDTO = CashTradeRequestDTO.builder()
+                                        .assetSymbol("TRY")
+                                        .amount(totalCost)
+                                        .build();
+                        this.cashOut(walletId, cashOutRequestDTO, TransactionType.TRADE_CASH_OUT);
+                }
 
                 walletService.syncWallet(walletId);
 
@@ -80,16 +87,17 @@ public class TradeService {
         }
 
         @Transactional
-        public TradeResponseDTO sell(Long walletId, TradeRequestDTO requestDTO) {
+        public TradeResponseDTO sell(Long walletId, SellTradeRequestDTO requestDTO) {
 
                 Wallet wallet = walletService.getWalletEntityById(walletId);
 
                 WalletAsset sellWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset sellAsset = sellWalletAsset.getAsset();
 
+                // tekli ve çoklu satış durumlarını tek bir fonksiyonda kontrol et
                 this.assetControlForSell(requestDTO, sellWalletAsset);
 
-                BigDecimal unitPrice = resolveUnitPrice(requestDTO, sellAsset);
+                BigDecimal unitPrice = resolveUnitPrice(requestDTO.getUnitPrice(), sellAsset);
                 BigDecimal totalCost = requestDTO.getQuantity().multiply(unitPrice);
 
                 Transaction sellTransactionToSave = Transaction.builder()
@@ -99,18 +107,20 @@ public class TradeService {
                                 .quantity(requestDTO.getQuantity())
                                 .unitCost(unitPrice)
                                 .totalCost(totalCost)
-                                .fee(resolveFee(requestDTO))
+                                .fee(resolveFee(requestDTO.getFee()))
                                 .transactionDate(resolveTransactionDate(requestDTO.getTransactionDate()))
                                 .build();
 
                 Transaction sellTransaction = transactionRepository.save(Objects.requireNonNull(sellTransactionToSave));
 
                 CashTradeRequestDTO cashOutRequestDTO = CashTradeRequestDTO.builder()
+                                .assetSymbol("TRY")
                                 .amount(totalCost)
                                 .build();
                 this.cashIn(walletId, cashOutRequestDTO, TransactionType.TRADE_CASH_IN);
 
-                assetLotService.sellAssetLot(sellWalletAsset.getId(), requestDTO.getQuantity());
+                assetLotService.sellAssetLot(sellWalletAsset.getId(), requestDTO.getQuantity(),
+                                requestDTO.getSellTransactionId());
                 walletAssetService.updateWalletAsset(walletId, sellAsset.getSymbol());
 
                 walletService.syncWallet(walletId);
@@ -118,10 +128,11 @@ public class TradeService {
                 return tradeMapper.toResponse(sellTransaction);
         }
 
+        @Transactional
         public TradeResponseDTO cashIn(Long walletId, CashTradeRequestDTO requestDTO, TransactionType transactionType) {
                 Wallet wallet = walletService.getWalletEntityById(walletId);
 
-                WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, "TRY");
+                WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset cashAsset = cashWalletAsset.getAsset();
 
                 Transaction cashInTransactionToSave = Transaction.builder()
@@ -145,15 +156,17 @@ public class TradeService {
                 return tradeMapper.toResponse(cashInTransaction);
         }
 
+        @Transactional
         public TradeResponseDTO cashOut(Long walletId, CashTradeRequestDTO requestDTO,
                         TransactionType transactionType) {
 
                 Wallet wallet = walletService.getWalletEntityById(walletId);
 
-                WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, "TRY");
+                WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset cashAsset = cashWalletAsset.getAsset();
 
                 this.cashControlForCashOut(requestDTO, cashWalletAsset);
+                BigDecimal totalCost = requestDTO.getAmount().multiply(cashAsset.getCurrentPrice());
 
                 Transaction transactionToSave = Transaction.builder()
                                 .wallet(wallet)
@@ -161,7 +174,7 @@ public class TradeService {
                                 .transactionType(transactionType)
                                 .quantity(requestDTO.getAmount())
                                 .unitCost(cashAsset.getCurrentPrice())
-                                .totalCost(requestDTO.getAmount().multiply(cashAsset.getCurrentPrice()))
+                                .totalCost(totalCost)
                                 .fee(BigDecimal.ZERO)
                                 .transactionDate(resolveTransactionDate(null))
                                 .build();
@@ -180,28 +193,33 @@ public class TradeService {
                 return requestDate != null ? requestDate : LocalDateTime.now();
         }
 
-        private BigDecimal resolveUnitPrice(TradeRequestDTO requestDTO, Asset asset) {
-                if (requestDTO.getUnitPrice() != null) {
-                        return requestDTO.getUnitPrice();
+        private BigDecimal resolveUnitPrice(BigDecimal unitPrice, Asset asset) {
+                if (unitPrice != null) {
+                        return unitPrice;
                 }
                 return asset.getCurrentPrice();
         }
 
-        private BigDecimal resolveFee(TradeRequestDTO requestDTO) {
-                return requestDTO.getFee() != null ? requestDTO.getFee() : BigDecimal.ZERO;
+        private BigDecimal resolveFee(BigDecimal fee) {
+                return fee != null ? fee : BigDecimal.ZERO;
         }
 
         private WalletAsset getOrCreateWalletAsset(Wallet wallet, String assetSymbol) {
                 return wallet.getWalletAssets().stream()
                                 .filter(wa -> wa.getAsset().getSymbol().equalsIgnoreCase(assetSymbol))
                                 .findFirst()
-                                .orElseGet(() -> walletAssetService.createWalletAsset(wallet,
-                                                assetService.getAssetEntityBySymbol(assetSymbol)));
+                                .orElseGet(() -> {
+                                        WalletAsset createdWalletAsset = walletAssetService.createWalletAsset(wallet,
+                                                        assetService.getAssetEntityBySymbol(assetSymbol));
+                                        wallet.getWalletAssets().add(createdWalletAsset);
+                                        return createdWalletAsset;
+                                });
         }
 
-        private void cashControlForBuy(TradeRequestDTO requestDTO, WalletAsset cashWalletAsset) {
+        private void cashControlForBuy(BuyTradeRequestDTO requestDTO, WalletAsset cashWalletAsset) {
                 BigDecimal requiredCash = requestDTO.getQuantity().multiply(
-                                resolveUnitPrice(requestDTO, cashWalletAsset.getAsset())).add(resolveFee(requestDTO));
+                                resolveUnitPrice(requestDTO.getUnitPrice(), cashWalletAsset.getAsset()))
+                                .add(resolveFee(requestDTO.getFee()));
 
                 if (cashWalletAsset.getQuantity().multiply(cashWalletAsset.getAsset().getCurrentPrice())
                                 .compareTo(requiredCash) < 0) {
@@ -209,7 +227,14 @@ public class TradeService {
                 }
         }
 
-        private void assetControlForSell(TradeRequestDTO requestDTO, WalletAsset sellWalletAsset) {
+        private void assetControlForSell(SellTradeRequestDTO requestDTO, WalletAsset sellWalletAsset) {
+                if (requestDTO.getSellTransactionId() != null) {// null tüm varlıklardan satılabilir demek
+                        if (!assetLotService.transactionIsSellable(requestDTO.getSellTransactionId(),
+                                        requestDTO.getQuantity())) {
+                                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                                "Transaction is not sellable");
+                        }
+                }
                 if (sellWalletAsset.getQuantity().compareTo(requestDTO.getQuantity()) < 0) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                         "Insufficient asset quantity in wallet for sell");
