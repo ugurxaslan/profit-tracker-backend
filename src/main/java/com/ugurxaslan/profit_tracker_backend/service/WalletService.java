@@ -5,6 +5,7 @@ import com.ugurxaslan.profit_tracker_backend.dto.response.WalletResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.mapper.WalletMapper;
 import com.ugurxaslan.profit_tracker_backend.model.User;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
+import com.ugurxaslan.profit_tracker_backend.model.WalletAsset;
 import com.ugurxaslan.profit_tracker_backend.repository.WalletRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final UserService userService;
+    private final WalletAssetService walletAssetService;
     private final WalletMapper walletMapper;
 
     @Transactional
@@ -42,7 +44,8 @@ public class WalletService {
                 .walletName(requestedName)
                 .user(user)
                 .build();
-        Wallet savedWallet = recalculateWalletTotalsAndSave(wallet);
+        recalculateWalletTotals(wallet);
+        Wallet savedWallet = walletRepository.saveAndFlush(Objects.requireNonNull(wallet));
         return walletMapper.toResponse(savedWallet);
     }
 
@@ -51,7 +54,7 @@ public class WalletService {
 
         Wallet wallet = walletRepository.findById(walletId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet not found"));
-        recalculateWalletTotalsAndSave(wallet);
+        recalculateWalletTotals(wallet);
         return walletMapper.toResponse(wallet);
     }
 
@@ -59,7 +62,7 @@ public class WalletService {
     public List<WalletResponseDTO> getAllWallets(@NonNull String currentUsername) {
         return walletRepository.findAllByUser_Username(currentUsername)
                 .stream()
-                .peek(this::recalculateWalletTotalsAndSave)
+                .peek(this::recalculateWalletTotals)
                 .map(walletMapper::toResponse)
                 .toList();
     }
@@ -93,19 +96,22 @@ public class WalletService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet not found"));
     }
 
+    @Transactional
     public Wallet syncWallet(@NonNull Long walletId) {
         Wallet wallet = getWalletEntityById(walletId);
-        Wallet updatedWallet = this.recalculateWalletTotalsAndSave(wallet);
-        return updatedWallet;
+        recalculateWalletTotals(wallet);
+        return walletRepository.saveAndFlush(Objects.requireNonNull(wallet));
     }
 
     @Transactional
-    private Wallet recalculateWalletTotalsAndSave(@NonNull Wallet wallet) {
-        BigDecimal newCashBalance = wallet.getWalletAssets().stream()
+    private void recalculateWalletTotals(@NonNull Wallet wallet) {
+        List<WalletAsset> walletAssets = walletAssetService.getWalletAssetsByWalletId(wallet.getId());
+
+        BigDecimal newCashBalance = walletAssets.stream()
                 .filter(wa -> wa.getAsset().getSymbol().equalsIgnoreCase("TRY"))
                 .map(wa -> wa.getTotalCost())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal newPortfolioValue = wallet.getWalletAssets().stream()
+        BigDecimal newPortfolioValue = walletAssets.stream()
                 .filter(wa -> !wa.getAsset().getSymbol().equalsIgnoreCase("TRY"))
                 .map(wa -> wa.getTotalValue())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -115,8 +121,6 @@ public class WalletService {
         wallet.setCash(newCashBalance);
         wallet.setPortfolioValue(newPortfolioValue);
         wallet.setTotalValue(newCashBalance.add(newPortfolioValue));
-        Wallet savedWallet = Objects.requireNonNull(walletRepository.save(wallet));
-        return savedWallet;
     }
 
 }

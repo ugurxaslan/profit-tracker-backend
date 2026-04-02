@@ -31,6 +31,27 @@ public class WalletAssetService {
         private final AssetLotService assetLotService;
         private final AssetService assetService;
 
+        @Transactional
+        public Wallet recalculateWalletTotals(@NonNull Wallet wallet) {
+                List<WalletAsset> walletAssets = walletAssetRepository.findByWallet_Id(wallet.getId());
+
+                BigDecimal newCashBalance = walletAssets.stream()
+                                .filter(wa -> wa.getAsset().getSymbol().equalsIgnoreCase("TRY"))
+                                .map(wa -> wa.getTotalCost())
+                                .reduce(ZERO, BigDecimal::add);
+                BigDecimal newPortfolioValue = walletAssets.stream()
+                                .filter(wa -> !wa.getAsset().getSymbol().equalsIgnoreCase("TRY"))
+                                .map(wa -> wa.getTotalValue())
+                                .reduce(ZERO, BigDecimal::add);
+
+                log.info("Recalculating wallet totals for walletId={}, newCashBalance={}, newPortfolioValue={}",
+                                wallet.getId(), newCashBalance, newPortfolioValue);
+                wallet.setCash(newCashBalance);
+                wallet.setPortfolioValue(newPortfolioValue);
+                wallet.setTotalValue(newCashBalance.add(newPortfolioValue));
+                return wallet;
+        }
+
         public WalletAsset createWalletAsset(@NonNull Wallet wallet, @NonNull Asset asset) {
                 if (walletAssetRepository.existsByWallet_IdAndAsset_Id(wallet.getId(), asset.getId())) {
                         throw new ResponseStatusException(HttpStatus.CONFLICT, "Wallet asset already exists");
@@ -41,7 +62,7 @@ public class WalletAssetService {
                                 .asset(asset)
                                 .build();
 
-                return walletAssetRepository.save(Objects.requireNonNull(walletAssetToSave));
+                return walletAssetRepository.saveAndFlush(Objects.requireNonNull(walletAssetToSave));
         }
 
         @Transactional(readOnly = true)
@@ -69,7 +90,7 @@ public class WalletAssetService {
                                                 "Wallet asset not found"));
 
                 recalculateWalletAssetFields(walletAsset);
-                return walletAssetRepository.save(Objects.requireNonNull(walletAsset));
+                return walletAssetRepository.saveAndFlush(Objects.requireNonNull(walletAsset));
         }
 
         @Transactional
