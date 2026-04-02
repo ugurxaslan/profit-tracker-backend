@@ -50,10 +50,10 @@ public class WalletController {
 
     @PreAuthorize("@walletSecurity.isWalletOwner(#walletId, authentication)")
     @PutMapping("/{walletId}")
-    public ResponseEntity<WalletResponseDTO> updateWallet(
+    public ResponseEntity<WalletResponseDTO> updateWalletName(
             @PathVariable Long walletId,
             @Valid @RequestBody WalletRequestDTO requestDTO) {
-        WalletResponseDTO updatedWallet = walletService.updateWallet(walletId, requestDTO);
+        WalletResponseDTO updatedWallet = walletService.updateWalletName(walletId, requestDTO);
         return ResponseEntity.ok(updatedWallet);
     }
 
