@@ -13,8 +13,10 @@ public interface WalletAssetRepository extends JpaRepository<WalletAsset, Long> 
 
     List<WalletAsset> findByWallet_Id(Long walletId);
 
-    Optional<WalletAsset> findByWallet_IdAndAsset_Id(Long walletId, Long assetId);
+    Optional<WalletAsset> findByAsset_Symbol(String assetSymbol);
 
     boolean existsByWallet_IdAndAsset_Id(Long walletId, Long assetId);
-    
+
+    Optional<WalletAsset> findByWallet_IdAndAsset_Symbol(Long wallet_Id, String asset_Symbol);
+
 }
