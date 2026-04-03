@@ -23,7 +23,6 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Validated
 public class UserService {
 
