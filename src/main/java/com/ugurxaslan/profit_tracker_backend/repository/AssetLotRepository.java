@@ -11,6 +11,8 @@ import com.ugurxaslan.profit_tracker_backend.model.AssetLot;
 @Repository
 public interface AssetLotRepository extends JpaRepository<AssetLot, Long> {
 
+	List<AssetLot> findByWalletAsset_Wallet_Id(Long walletId);
+
 	List<AssetLot> findByWalletAsset_IdAndIsClosedFalseOrderByTransaction_TransactionDateAsc(
 			Long walletAssetId);
 
