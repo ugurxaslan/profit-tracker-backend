@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-@Component("userSecurityt")
+@Component("userSecurity")
 @RequiredArgsConstructor
 public class UserSecurity {
 
