@@ -10,7 +10,6 @@ import com.ugurxaslan.profit_tracker_backend.model.Asset;
 import com.ugurxaslan.profit_tracker_backend.model.Transaction;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 import com.ugurxaslan.profit_tracker_backend.model.WalletAsset;
-import com.ugurxaslan.profit_tracker_backend.repository.TransactionRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,15 +29,13 @@ import java.util.Objects;
 public class TradeService {
 
         private final WalletService walletService;
-        private final AssetService assetService;
-        private final AssetLotService assetLotService;
         private final WalletAssetService walletAssetService;
+        private final AssetLotService assetLotService;
+        private final AssetService assetService;
 
-        private final TransactionRepository transactionRepository;
+        private final TransactionService transactionService;
         private final TradeMapper tradeMapper;
 
-        // TODO: sell için : belirtilen transsactiounu satabilme
-        // TODO: buy için : alış için bakiye kullan veya direkt ekle
         @Transactional
         public TradeResponseDTO buy(Long walletId, BuyTradeRequestDTO requestDTO) {
 
@@ -68,7 +64,7 @@ public class TradeService {
                                 .fee(resolveFee(requestDTO.getFee()))
                                 .transactionDate(resolveTransactionDate(requestDTO.getTransactionDate()))
                                 .build();
-                Transaction buyTransaction = transactionRepository.save(Objects.requireNonNull(buyTransactionToSave));
+                Transaction buyTransaction = transactionService.createTransaction(buyTransactionToSave);
 
                 assetLotService.createAssetLot(buyAsset, buyTransaction, buyWalletAsset, requestDTO.getQuantity());
                 walletAssetService.updateWalletAsset(walletId, buyAsset.getSymbol());
@@ -111,7 +107,7 @@ public class TradeService {
                                 .transactionDate(resolveTransactionDate(requestDTO.getTransactionDate()))
                                 .build();
 
-                Transaction sellTransaction = transactionRepository.save(Objects.requireNonNull(sellTransactionToSave));
+                Transaction sellTransaction = transactionService.createTransaction(sellTransactionToSave);
 
                 CashTradeRequestDTO cashOutRequestDTO = CashTradeRequestDTO.builder()
                                 .assetSymbol("TRY")
@@ -145,8 +141,7 @@ public class TradeService {
                                 .fee(BigDecimal.ZERO)
                                 .transactionDate(resolveTransactionDate(null))
                                 .build();
-                Transaction cashInTransaction = transactionRepository
-                                .save(Objects.requireNonNull(cashInTransactionToSave));
+                Transaction cashInTransaction = transactionService.createTransaction(cashInTransactionToSave);
 
                 assetLotService.createAssetLot(cashAsset, cashInTransaction, cashWalletAsset, requestDTO.getAmount());
                 walletAssetService.updateWalletAsset(walletId, cashAsset.getSymbol());
@@ -178,7 +173,7 @@ public class TradeService {
                                 .fee(BigDecimal.ZERO)
                                 .transactionDate(resolveTransactionDate(null))
                                 .build();
-                Transaction transaction = transactionRepository.save(Objects.requireNonNull(transactionToSave));
+                Transaction transaction = transactionService.createTransaction(transactionToSave);
 
                 assetLotService.cashOutAssetLots(cashWalletAsset.getId(), requestDTO.getAmount());
                 walletAssetService.updateWalletAsset(walletId, cashAsset.getSymbol());
