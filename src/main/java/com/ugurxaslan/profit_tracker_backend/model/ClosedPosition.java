@@ -31,6 +31,24 @@ public class ClosedPosition extends BaseEntity {
     @Column(name = "used_quantity", nullable = false, precision = 19, scale = 2)
     private BigDecimal usedQuantity;
 
+    @NotNull(message = "Asset must not be null")
+    @DecimalMin(value = "0.01", inclusive = true, message = "Buy unit price must be greater than 0")
+    @Column(name = "buy_unit_price", nullable = false, precision = 19, scale = 2)
+    private BigDecimal buyUnitPrice;
+
+    @NotNull(message = "Asset must not be null")
+    @DecimalMin(value = "0.01", inclusive = true, message = "Sell unit price must be greater than 0")
+    @Column(name = "sell_unit_price", nullable = false, precision = 19, scale = 2)
+    private BigDecimal sellUnitPrice;
+
+    @NotNull(message = "Profit/loss must not be null")
+    @Column(name = "profit_loss", nullable = false, precision = 19, scale = 2)
+    private BigDecimal profitLoss;
+
+    @NotNull(message = "Profit/loss percentage must not be null")
+    @Column(name = "profit_loss_percentage", nullable = false, precision = 19, scale = 2)
+    private BigDecimal profitLossPercentage;
+
     // Relationships
 
     @NotNull(message = "Buy transaction must not be null")

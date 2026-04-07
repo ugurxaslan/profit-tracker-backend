@@ -301,27 +301,50 @@ public class TradeService {
                         if (remainingConsumeQuantity.compareTo(BigDecimal.ZERO) <= 0)// sayı pozitif se devam et
                                 break;
 
-                        BigDecimal lotQty = openPosition.getRemainingQuantity();
-                        if (lotQty.compareTo(remainingConsumeQuantity) <= 0) {
+                        BigDecimal positionQty = openPosition.getRemainingQuantity();
+
+                        if (positionQty.compareTo(remainingConsumeQuantity) <= 0) {
 
                                 openPosition.setRemainingQuantity(BigDecimal.ZERO);
                                 openPositionService.deleteOpenPosition(openPosition);
-                                remainingConsumeQuantity = remainingConsumeQuantity.subtract(lotQty);
+                                remainingConsumeQuantity = remainingConsumeQuantity.subtract(positionQty);
 
                         } else {
-                                openPosition.setRemainingQuantity(lotQty.subtract(remainingConsumeQuantity));
+                                openPosition.setRemainingQuantity(positionQty.subtract(remainingConsumeQuantity));
                                 remainingConsumeQuantity = BigDecimal.ZERO;
                         }
                         if (sellTransaction != null) {
+                                Transaction buyTransaction = openPosition.getTransaction();
+                                BigDecimal profitLoss = calculateProfitLoss(buyTransaction, sellTransaction);
+                                BigDecimal profitLossPercentage = calculateProfitLossPercentage(buyTransaction,
+                                                sellTransaction);
                                 ClosedPosition closedPosition = ClosedPosition.builder()
-                                                .buyTransaction(openPosition.getTransaction())
+                                                .buyUnitPrice(buyTransaction.getUnitCost())
+                                                .sellUnitPrice(sellTransaction.getUnitCost())
+                                                .profitLoss(profitLoss)
+                                                .profitLossPercentage(profitLossPercentage)
+                                                .buyTransaction(buyTransaction)
                                                 .sellTransaction(sellTransaction)
                                                 .wallet(sellTransaction.getWallet())
-                                                .usedQuantity(lotQty.subtract(openPosition.getRemainingQuantity()))
+                                                .usedQuantity(positionQty.subtract(openPosition.getRemainingQuantity()))
                                                 .build();
                                 closedPositionService.createClosedPosition(closedPosition);
                         }
                         openPositionService.updateOpenPosition(openPosition);
                 }
+        }
+
+        private BigDecimal calculateProfitLoss(Transaction buyTransaction, Transaction sellTransaction) {
+                return sellTransaction.getUnitCost().subtract(buyTransaction.getUnitCost())
+                                .multiply(sellTransaction.getQuantity());
+        }
+
+        private BigDecimal calculateProfitLossPercentage(Transaction buyTransaction, Transaction sellTransaction) {
+                if (buyTransaction.getUnitCost().compareTo(BigDecimal.ZERO) == 0) {
+                        return BigDecimal.ZERO;
+                }
+                return sellTransaction.getUnitCost().subtract(buyTransaction.getUnitCost())
+                                .divide(buyTransaction.getUnitCost(), 4, RoundingMode.HALF_UP)
+                                .multiply(BigDecimal.valueOf(100));
         }
 }
