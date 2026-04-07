@@ -1,8 +1,11 @@
 package com.ugurxaslan.profit_tracker_backend.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.AssertFalse;
 import lombok.*;
 import java.math.BigDecimal;
+
+import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
 
 @Getter
 @Setter
@@ -10,8 +13,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "asset_lots")
-public class AssetLot extends BaseEntity {
+@Table(name = "open_positions")
+public class OpenPosition extends BaseEntity {
 
     @Column(name = "remaining_quantity", nullable = false, precision = 19, scale = 2)
     private BigDecimal remainingQuantity;
@@ -33,4 +36,10 @@ public class AssetLot extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "wallet_asset_id", nullable = false)
     private WalletAsset walletAsset;
+
+    @AssertFalse
+    private boolean isTransactionTypeInvalid() {
+        return transaction != null && transaction.getTransactionType() == TransactionType.SELL
+                || transaction.getTransactionType() == TransactionType.CASH_OUT;
+    }
 }

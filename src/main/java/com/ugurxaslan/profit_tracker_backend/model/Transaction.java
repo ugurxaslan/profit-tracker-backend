@@ -47,6 +47,6 @@ public class Transaction extends BaseEntity {
     private Asset asset;
 
     @OneToOne(mappedBy = "transaction", orphanRemoval = true, fetch = FetchType.LAZY)
-    private AssetLot assetLot;
+    private OpenPosition openPosition;
 
 }

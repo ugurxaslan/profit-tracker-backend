@@ -62,6 +62,6 @@ public class WalletAsset extends BaseEntity {
 
     @Builder.Default
     @OneToMany(mappedBy = "walletAsset", orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<AssetLot> assetLots = new ArrayList<>();
+    private List<OpenPosition> openPositions = new ArrayList<>();
 
 }

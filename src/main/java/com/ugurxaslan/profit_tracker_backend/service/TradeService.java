@@ -30,7 +30,7 @@ public class TradeService {
 
         private final WalletService walletService;
         private final WalletAssetService walletAssetService;
-        private final AssetLotService assetLotService;
+        private final OpenPositionService openPositionService;
         private final AssetService assetService;
 
         private final TransactionService transactionService;
@@ -66,7 +66,8 @@ public class TradeService {
                                 .build();
                 Transaction buyTransaction = transactionService.createTransaction(buyTransactionToSave);
 
-                assetLotService.createAssetLot(buyAsset, buyTransaction, buyWalletAsset, requestDTO.getQuantity());
+                openPositionService.createOpenPosition(buyAsset, buyTransaction, buyWalletAsset,
+                                requestDTO.getQuantity());
                 walletAssetService.updateWalletAsset(walletId, buyAsset.getSymbol());
 
                 if (useCash) {
@@ -115,7 +116,7 @@ public class TradeService {
                                 .build();
                 this.cashIn(walletId, cashOutRequestDTO, TransactionType.TRADE_CASH_IN);
 
-                assetLotService.sellAssetLot(sellWalletAsset.getId(), requestDTO.getQuantity(),
+                openPositionService.sellOpenPosition(sellWalletAsset.getId(), requestDTO.getQuantity(),
                                 requestDTO.getSellTransactionId());
                 walletAssetService.updateWalletAsset(walletId, sellAsset.getSymbol());
 
@@ -143,7 +144,8 @@ public class TradeService {
                                 .build();
                 Transaction cashInTransaction = transactionService.createTransaction(cashInTransactionToSave);
 
-                assetLotService.createAssetLot(cashAsset, cashInTransaction, cashWalletAsset, requestDTO.getAmount());
+                openPositionService.createOpenPosition(cashAsset, cashInTransaction, cashWalletAsset,
+                                requestDTO.getAmount());
                 walletAssetService.updateWalletAsset(walletId, cashAsset.getSymbol());
 
                 walletService.syncWallet(walletId);
@@ -175,7 +177,7 @@ public class TradeService {
                                 .build();
                 Transaction transaction = transactionService.createTransaction(transactionToSave);
 
-                assetLotService.cashOutAssetLots(cashWalletAsset.getId(), requestDTO.getAmount());
+                openPositionService.cashOutOpenPositions(cashWalletAsset.getId(), requestDTO.getAmount());
                 walletAssetService.updateWalletAsset(walletId, cashAsset.getSymbol());
 
                 walletService.syncWallet(walletId);
@@ -224,7 +226,7 @@ public class TradeService {
 
         private void assetControlForSell(SellTradeRequestDTO requestDTO, WalletAsset sellWalletAsset) {
                 if (requestDTO.getSellTransactionId() != null) {// null tüm varlıklardan satılabilir demek
-                        if (!assetLotService.transactionIsSellable(requestDTO.getSellTransactionId(),
+                        if (!openPositionService.transactionIsSellable(requestDTO.getSellTransactionId(),
                                         requestDTO.getQuantity())) {
                                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                                 "Transaction is not sellable");

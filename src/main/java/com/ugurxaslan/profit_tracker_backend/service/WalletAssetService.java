@@ -1,6 +1,6 @@
 package com.ugurxaslan.profit_tracker_backend.service;
 
-import com.ugurxaslan.profit_tracker_backend.model.AssetLot;
+import com.ugurxaslan.profit_tracker_backend.model.OpenPosition;
 import com.ugurxaslan.profit_tracker_backend.model.Asset;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 import com.ugurxaslan.profit_tracker_backend.model.WalletAsset;
@@ -28,7 +28,7 @@ public class WalletAssetService {
         private static final BigDecimal ZERO = BigDecimal.ZERO;
 
         private final WalletAssetRepository walletAssetRepository;
-        private final AssetLotService assetLotService;
+        private final OpenPositionService openPositionService;
         private final AssetService assetService;
 
         @Transactional
@@ -112,15 +112,15 @@ public class WalletAssetService {
 
         @Transactional
         private void recalculateWalletAssetFields(@NonNull WalletAsset walletAsset) {
-                List<AssetLot> openLots = assetLotService.getOpenAssetLots(walletAsset.getId());
+                List<OpenPosition> openPositions = openPositionService.getOpenOpenPositions(walletAsset.getId());
 
-                BigDecimal quantity = openLots.stream()
-                                .map(AssetLot::getRemainingQuantity)
+                BigDecimal quantity = openPositions.stream()
+                                .map(OpenPosition::getRemainingQuantity)
                                 .reduce(ZERO, BigDecimal::add);
 
-                BigDecimal totalCost = openLots.stream()
-                                .map(openlot -> openlot.getRemainingQuantity()
-                                                .multiply(openlot.getTransaction().getUnitCost()))
+                BigDecimal totalCost = openPositions.stream()
+                                .map(openPosition -> openPosition.getRemainingQuantity()
+                                                .multiply(openPosition.getTransaction().getUnitCost()))
                                 .reduce(ZERO, BigDecimal::add);
 
                 BigDecimal currentPrice = assetService.getAssetEntityBySymbol(walletAsset.getAsset().getSymbol())
