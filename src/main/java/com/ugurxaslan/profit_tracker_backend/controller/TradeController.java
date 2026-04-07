@@ -33,7 +33,10 @@ public class TradeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("@walletSecurity.isWalletOwner(#walletId, authentication)")
+    @PreAuthorize("@walletSecurity.isWalletOwner(#walletId, authentication) and " +
+            "(#requestDTO.optionalBuyTransactionIdForSell == null or " +
+            "@transactionSecurity.isTransactionOwner(#requestDTO.optionalBuyTransactionIdForSell, authentication))")
+
     @PostMapping("/wallets/{walletId}/sell")
     public ResponseEntity<TradeResponseDTO> sell(
             @PathVariable Long walletId,

@@ -13,7 +13,9 @@ public interface OpenPositionRepository extends JpaRepository<OpenPosition, Long
 
     List<OpenPosition> findByWalletAsset_Wallet_Id(Long walletId);
 
-    List<OpenPosition> findByWalletAsset_IdAndIsClosedFalseOrderByTransaction_TransactionDateAsc(Long walletAssetId);
+    List<OpenPosition> findByWalletAsset_IdOrderByTransaction_TransactionDateAsc(Long walletAssetId);
+
+    Optional<OpenPosition> findByWalletAsset_IdAndTransaction_Id(Long walletAssetId, Long transactionId);
 
     Optional<OpenPosition> findByTransaction_Id(Long transactionId);
 

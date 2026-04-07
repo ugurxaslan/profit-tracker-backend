@@ -7,15 +7,19 @@ import com.ugurxaslan.profit_tracker_backend.dto.response.TradeResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
 import com.ugurxaslan.profit_tracker_backend.mapper.TradeMapper;
 import com.ugurxaslan.profit_tracker_backend.model.Asset;
+import com.ugurxaslan.profit_tracker_backend.model.ClosedPosition;
+import com.ugurxaslan.profit_tracker_backend.model.OpenPosition;
 import com.ugurxaslan.profit_tracker_backend.model.Transaction;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 import com.ugurxaslan.profit_tracker_backend.model.WalletAsset;
 import com.ugurxaslan.profit_tracker_backend.service.entityService.AssetService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.ClosedPositionService;
 import com.ugurxaslan.profit_tracker_backend.service.entityService.OpenPositionService;
 import com.ugurxaslan.profit_tracker_backend.service.entityService.TransactionService;
 import com.ugurxaslan.profit_tracker_backend.service.entityService.WalletAssetService;
 import com.ugurxaslan.profit_tracker_backend.service.entityService.WalletService;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +39,13 @@ import java.time.LocalDateTime;
 @Slf4j
 public class TradeService {
 
+        private final AssetService assetService;
         private final WalletService walletService;
         private final WalletAssetService walletAssetService;
         private final OpenPositionService openPositionService;
-        private final AssetService assetService;
-
+        private final ClosedPositionService closedPositionService;
         private final TransactionService transactionService;
+
         private final TradeMapper tradeMapper;
 
         @Transactional
@@ -48,16 +55,16 @@ public class TradeService {
                 boolean useCash = requestDTO.getIsUseCash() == null || requestDTO.getIsUseCash();
 
                 WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, "TRY");
-
-                if (useCash) {
-                        this.cashControlForBuy(requestDTO, cashWalletAsset);
-                }
-
                 WalletAsset buyWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset buyAsset = buyWalletAsset.getAsset();
 
+                if (useCash) {
+
+                        this.cashControlForBuy(requestDTO, cashWalletAsset, buyAsset);
+                }
+
                 BigDecimal unitPrice = resolveUnitPrice(requestDTO.getUnitPrice(), buyAsset);
-                BigDecimal totalCost = requestDTO.getQuantity().multiply(unitPrice);
+                BigDecimal totalCost = roundMoney(requestDTO.getQuantity().multiply(unitPrice));
 
                 Transaction buyTransactionToSave = Transaction.builder()
                                 .wallet(wallet)
@@ -92,15 +99,13 @@ public class TradeService {
         public TradeResponseDTO sell(Long walletId, SellTradeRequestDTO requestDTO) {
 
                 Wallet wallet = walletService.getWalletEntityById(walletId);
-
                 WalletAsset sellWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset sellAsset = sellWalletAsset.getAsset();
 
-                // tekli ve çoklu satış durumlarını tek bir fonksiyonda kontrol et
                 this.assetControlForSell(requestDTO, sellWalletAsset);
 
                 BigDecimal unitPrice = resolveUnitPrice(requestDTO.getUnitPrice(), sellAsset);
-                BigDecimal totalCost = requestDTO.getQuantity().multiply(unitPrice);
+                BigDecimal totalCost = roundMoney(requestDTO.getQuantity().multiply(unitPrice));
 
                 Transaction sellTransactionToSave = Transaction.builder()
                                 .wallet(wallet)
@@ -121,8 +126,8 @@ public class TradeService {
                                 .build();
                 this.cashIn(walletId, cashOutRequestDTO, TransactionType.TRADE_CASH_IN);
 
-                openPositionService.sellOpenPosition(sellWalletAsset.getId(), requestDTO.getQuantity(),
-                                requestDTO.getSellTransactionId());
+                this.sellOpenPosition(sellWalletAsset.getId(), requestDTO.getQuantity(),
+                                requestDTO.getOptionalBuyTransactionIdForSell(), sellTransaction);
                 walletAssetService.updateWalletAsset(walletId, sellAsset.getSymbol());
 
                 walletService.syncWallet(walletId);
@@ -143,7 +148,7 @@ public class TradeService {
                                 .transactionType(transactionType)
                                 .quantity(requestDTO.getAmount())
                                 .unitCost(cashAsset.getCurrentPrice())
-                                .totalCost(requestDTO.getAmount().multiply(cashAsset.getCurrentPrice()))
+                                .totalCost(roundMoney(requestDTO.getAmount().multiply(cashAsset.getCurrentPrice())))
                                 .fee(BigDecimal.ZERO)
                                 .transactionDate(resolveTransactionDate(null))
                                 .build();
@@ -168,7 +173,7 @@ public class TradeService {
                 Asset cashAsset = cashWalletAsset.getAsset();
 
                 this.cashControlForCashOut(requestDTO, cashWalletAsset);
-                BigDecimal totalCost = requestDTO.getAmount().multiply(cashAsset.getCurrentPrice());
+                BigDecimal totalCost = roundMoney(requestDTO.getAmount().multiply(cashAsset.getCurrentPrice()));
 
                 Transaction transactionToSave = Transaction.builder()
                                 .wallet(wallet)
@@ -182,7 +187,7 @@ public class TradeService {
                                 .build();
                 Transaction transaction = transactionService.createTransaction(transactionToSave);
 
-                openPositionService.cashOutOpenPositions(cashWalletAsset.getId(), requestDTO.getAmount());
+                this.cashOutOpenPositions(cashWalletAsset.getId(), requestDTO.getAmount());
                 walletAssetService.updateWalletAsset(walletId, cashAsset.getSymbol());
 
                 walletService.syncWallet(walletId);
@@ -206,6 +211,10 @@ public class TradeService {
                 return fee != null ? fee : BigDecimal.ZERO;
         }
 
+        private BigDecimal roundMoney(BigDecimal value) {
+                return value.setScale(2, RoundingMode.HALF_UP);
+        }
+
         private WalletAsset getOrCreateWalletAsset(Wallet wallet, String assetSymbol) {
                 return wallet.getWalletAssets().stream()
                                 .filter(wa -> wa.getAsset().getSymbol().equalsIgnoreCase(assetSymbol))
@@ -218,9 +227,9 @@ public class TradeService {
                                 });
         }
 
-        private void cashControlForBuy(BuyTradeRequestDTO requestDTO, WalletAsset cashWalletAsset) {
-                BigDecimal requiredCash = requestDTO.getQuantity().multiply(
-                                resolveUnitPrice(requestDTO.getUnitPrice(), cashWalletAsset.getAsset()))
+        private void cashControlForBuy(BuyTradeRequestDTO requestDTO, WalletAsset cashWalletAsset, Asset buyAsset) {
+                BigDecimal requiredCash = roundMoney(requestDTO.getQuantity().multiply(
+                                resolveUnitPrice(requestDTO.getUnitPrice(), buyAsset)))
                                 .add(resolveFee(requestDTO.getFee()));
 
                 if (cashWalletAsset.getQuantity().multiply(cashWalletAsset.getAsset().getCurrentPrice())
@@ -230,8 +239,9 @@ public class TradeService {
         }
 
         private void assetControlForSell(SellTradeRequestDTO requestDTO, WalletAsset sellWalletAsset) {
-                if (requestDTO.getSellTransactionId() != null) {// null tüm varlıklardan satılabilir demek
-                        if (!openPositionService.transactionIsSellable(requestDTO.getSellTransactionId(),
+                if (requestDTO.getOptionalBuyTransactionIdForSell() != null) {// null tüm varlıklardan satılabilir demek
+                        if (!openPositionService.openPositionIsSellable(sellWalletAsset.getId(),
+                                        requestDTO.getOptionalBuyTransactionIdForSell(),
                                         requestDTO.getQuantity())) {
                                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                                 "Transaction is not sellable");
@@ -247,6 +257,71 @@ public class TradeService {
                 if (cashWalletAsset.getTotalValue().compareTo(requestDTO.getAmount()) < 0) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                         "Insufficient cash balance in wallet");
+                }
+        }
+
+        @Transactional
+        public void sellOpenPosition(@NonNull Long walletAssetId, @NonNull BigDecimal consumeQuantity,
+                        Long optionalBuyTransactionIdForSell, Transaction sellTransaction) {
+                consumeOpenPositions(walletAssetId, consumeQuantity, "sell", optionalBuyTransactionIdForSell,
+                                sellTransaction);
+        }
+
+        @Transactional
+        public void cashOutOpenPositions(@NonNull Long walletAssetId, @NonNull BigDecimal consumeQuantity) {
+                consumeOpenPositions(walletAssetId, consumeQuantity, "cash out", null, null);
+        }
+
+        @Transactional
+        private void consumeOpenPositions(@NonNull Long walletAssetId, @NonNull BigDecimal consumeQuantity,
+                        @NonNull String operationName, Long optionalBuyTransactionIdForSell,
+                        Transaction sellTransaction) {
+                List<OpenPosition> openPositions;
+
+                if (optionalBuyTransactionIdForSell == null) {
+                        openPositions = openPositionService.getOpenOpenPositions(walletAssetId);
+                } else {
+                        openPositions = List.of(openPositionService
+                                        .getOpenPositionByWalletAssetAndTransactionId(walletAssetId,
+                                                        optionalBuyTransactionIdForSell));
+
+                }
+
+                BigDecimal totalAvailableQuantity = openPositions.stream()
+                                .map(OpenPosition::getRemainingQuantity)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                if (totalAvailableQuantity.compareTo(consumeQuantity) < 0) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "Insufficient quantity in open positions for " + operationName);
+                }
+
+                BigDecimal remainingConsumeQuantity = consumeQuantity;
+                for (OpenPosition openPosition : openPositions) {
+                        if (remainingConsumeQuantity.compareTo(BigDecimal.ZERO) <= 0)// sayı pozitif se devam et
+                                break;
+
+                        BigDecimal lotQty = openPosition.getRemainingQuantity();
+                        if (lotQty.compareTo(remainingConsumeQuantity) <= 0) {
+
+                                openPosition.setRemainingQuantity(BigDecimal.ZERO);
+                                openPositionService.deleteOpenPosition(openPosition);
+                                remainingConsumeQuantity = remainingConsumeQuantity.subtract(lotQty);
+
+                        } else {
+                                openPosition.setRemainingQuantity(lotQty.subtract(remainingConsumeQuantity));
+                                remainingConsumeQuantity = BigDecimal.ZERO;
+                        }
+                        if (sellTransaction != null) {
+                                ClosedPosition closedPosition = ClosedPosition.builder()
+                                                .buyTransaction(openPosition.getTransaction())
+                                                .sellTransaction(sellTransaction)
+                                                .wallet(sellTransaction.getWallet())
+                                                .usedQuantity(lotQty.subtract(openPosition.getRemainingQuantity()))
+                                                .build();
+                                closedPositionService.createClosedPosition(closedPosition);
+                        }
+                        openPositionService.updateOpenPosition(openPosition);
                 }
         }
 }

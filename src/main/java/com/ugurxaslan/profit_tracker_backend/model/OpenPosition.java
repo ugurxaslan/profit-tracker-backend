@@ -19,10 +19,6 @@ public class OpenPosition extends BaseEntity {
     @Column(name = "remaining_quantity", nullable = false, precision = 19, scale = 2)
     private BigDecimal remainingQuantity;
 
-    @Builder.Default
-    @Column(name = "is_closed", nullable = false)
-    private boolean isClosed = false;
-
     // Relationships
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
