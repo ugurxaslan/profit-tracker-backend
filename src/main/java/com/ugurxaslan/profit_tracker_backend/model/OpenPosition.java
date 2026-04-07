@@ -2,6 +2,7 @@ package com.ugurxaslan.profit_tracker_backend.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertFalse;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.math.BigDecimal;
 
@@ -16,6 +17,7 @@ import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
 @Table(name = "open_positions")
 public class OpenPosition extends BaseEntity {
 
+    @NotNull(message = "Remaining quantity must not be null")
     @Column(name = "remaining_quantity", nullable = false, precision = 19, scale = 2)
     private BigDecimal remainingQuantity;
 
