@@ -10,6 +10,11 @@ import com.ugurxaslan.profit_tracker_backend.model.Asset;
 import com.ugurxaslan.profit_tracker_backend.model.Transaction;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 import com.ugurxaslan.profit_tracker_backend.model.WalletAsset;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.AssetService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.OpenPositionService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.TransactionService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.WalletAssetService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.WalletService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

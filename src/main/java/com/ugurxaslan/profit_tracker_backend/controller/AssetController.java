@@ -1,7 +1,8 @@
 package com.ugurxaslan.profit_tracker_backend.controller;
 
 import com.ugurxaslan.profit_tracker_backend.dto.response.AssetResponseDTO;
-import com.ugurxaslan.profit_tracker_backend.service.AssetService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.AssetService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

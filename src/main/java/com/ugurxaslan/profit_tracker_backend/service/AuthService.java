@@ -4,6 +4,8 @@ import com.ugurxaslan.profit_tracker_backend.dto.request.LoginRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.LoginResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.model.User;
 import com.ugurxaslan.profit_tracker_backend.security.JwtService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.UserService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;

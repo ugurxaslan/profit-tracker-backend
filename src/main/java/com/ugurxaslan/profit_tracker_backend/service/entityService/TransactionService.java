@@ -1,4 +1,4 @@
-package com.ugurxaslan.profit_tracker_backend.service;
+package com.ugurxaslan.profit_tracker_backend.service.entityService;
 
 import java.util.List;
 import java.util.Objects;

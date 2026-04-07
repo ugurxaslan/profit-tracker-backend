@@ -1,4 +1,4 @@
-package com.ugurxaslan.profit_tracker_backend.service;
+package com.ugurxaslan.profit_tracker_backend.service.entityService;
 
 import com.ugurxaslan.profit_tracker_backend.dto.request.WalletRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.WalletResponseDTO;
@@ -7,6 +7,7 @@ import com.ugurxaslan.profit_tracker_backend.model.User;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 import com.ugurxaslan.profit_tracker_backend.model.WalletAsset;
 import com.ugurxaslan.profit_tracker_backend.repository.WalletRepository;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

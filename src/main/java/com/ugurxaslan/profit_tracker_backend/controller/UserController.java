@@ -3,7 +3,8 @@ package com.ugurxaslan.profit_tracker_backend.controller;
 import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.UpdateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
-import com.ugurxaslan.profit_tracker_backend.service.UserService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.UserService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

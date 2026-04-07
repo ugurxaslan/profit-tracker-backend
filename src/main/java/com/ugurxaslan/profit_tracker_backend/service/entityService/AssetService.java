@@ -1,4 +1,4 @@
-package com.ugurxaslan.profit_tracker_backend.service;
+package com.ugurxaslan.profit_tracker_backend.service.entityService;
 
 import com.ugurxaslan.profit_tracker_backend.dto.response.AssetResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.mapper.AssetMapper;

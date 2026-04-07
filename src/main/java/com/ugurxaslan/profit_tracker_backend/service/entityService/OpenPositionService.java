@@ -1,4 +1,4 @@
-package com.ugurxaslan.profit_tracker_backend.service;
+package com.ugurxaslan.profit_tracker_backend.service.entityService;
 
 import com.ugurxaslan.profit_tracker_backend.model.Asset;
 import com.ugurxaslan.profit_tracker_backend.model.OpenPosition;
@@ -63,7 +63,7 @@ public class OpenPositionService {
         if (openPosition.getRemainingQuantity() == null
                 || openPosition.getRemainingQuantity().compareTo(BigDecimal.ZERO) != 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Asset lot can be deleted only when remaining quantity is 0");
+                    "Open position can be deleted only when remaining quantity is 0");
         }
 
         openPositionRepository.delete(openPosition);
@@ -73,7 +73,7 @@ public class OpenPositionService {
     @Transactional
     public OpenPosition getOpenPositionEntityById(@NonNull Long id) {
         return openPositionRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Asset lot not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Open position not found"));
     }
 
     @Transactional
@@ -105,7 +105,7 @@ public class OpenPositionService {
 
         if (totalAvailable.compareTo(amount) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Insufficient quantity in asset lots for " + operationName);
+                    "Insufficient quantity in open positions for " + operationName);
         }
 
         BigDecimal remainingAmount = amount;

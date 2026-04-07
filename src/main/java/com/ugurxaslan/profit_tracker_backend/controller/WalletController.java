@@ -2,7 +2,8 @@ package com.ugurxaslan.profit_tracker_backend.controller;
 
 import com.ugurxaslan.profit_tracker_backend.dto.request.WalletRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.WalletResponseDTO;
-import com.ugurxaslan.profit_tracker_backend.service.WalletService;
+import com.ugurxaslan.profit_tracker_backend.service.entityService.WalletService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
