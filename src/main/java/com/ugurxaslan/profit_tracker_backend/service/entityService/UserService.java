@@ -1,11 +1,9 @@
 package com.ugurxaslan.profit_tracker_backend.service.entityService;
 
-import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.UpdateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.mapper.UserMapper;
 import com.ugurxaslan.profit_tracker_backend.model.User;
-import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 import com.ugurxaslan.profit_tracker_backend.repository.UserRepository;
 
 import lombok.NonNull;
@@ -29,29 +27,6 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
-
-	@Transactional
-	public UserResponseDTO createUser(CreateUserRequestDTO requestDTO) {
-		if (userRepository.existsByUsername(requestDTO.getUsername())) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already in use");
-		}
-
-		if (userRepository.existsByEmail(requestDTO.getEmail())) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
-		}
-
-		User user = userMapper.toEntityForCreate(requestDTO);
-		user.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
-
-		// default wallet
-		Wallet defaultWallet = Wallet.builder().build();
-		defaultWallet.setUser(user);
-
-		user.getWalletList().add(defaultWallet);
-
-		User savedUser = userRepository.save(user);
-		return userMapper.toResponse(savedUser);
-	}
 
 	@Transactional(readOnly = true)
 	public UserResponseDTO getUserById(@NonNull Long id) {
