@@ -3,9 +3,9 @@ package com.ugurxaslan.profit_tracker_backend.service;
 import com.ugurxaslan.profit_tracker_backend.dto.request.SellTradeRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.BuyTradeRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.CashTradeRequestDTO;
-import com.ugurxaslan.profit_tracker_backend.dto.response.TradeResponseDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.response.TransactionResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
-import com.ugurxaslan.profit_tracker_backend.mapper.TradeMapper;
+import com.ugurxaslan.profit_tracker_backend.mapper.TransactionMapper;
 import com.ugurxaslan.profit_tracker_backend.model.Asset;
 import com.ugurxaslan.profit_tracker_backend.model.ClosedPosition;
 import com.ugurxaslan.profit_tracker_backend.model.OpenPosition;
@@ -46,10 +46,10 @@ public class TradeService {
         private final ClosedPositionService closedPositionService;
         private final TransactionService transactionService;
 
-        private final TradeMapper tradeMapper;
+        private final TransactionMapper transactionMapper;
 
         @Transactional
-        public TradeResponseDTO buy(Long walletId, BuyTradeRequestDTO requestDTO) {
+        public TransactionResponseDTO buy(Long walletId, BuyTradeRequestDTO requestDTO) {
 
                 Wallet wallet = walletService.getWalletEntityById(walletId);
                 boolean useCash = requestDTO.getIsUseCash() == null || requestDTO.getIsUseCash();
@@ -92,11 +92,11 @@ public class TradeService {
 
                 walletService.syncWallet(walletId);
 
-                return tradeMapper.toResponse(buyTransaction);
+                return transactionMapper.toResponse(buyTransaction);
         }
 
         @Transactional
-        public TradeResponseDTO sell(Long walletId, SellTradeRequestDTO requestDTO) {
+        public TransactionResponseDTO sell(Long walletId, SellTradeRequestDTO requestDTO) {
 
                 Wallet wallet = walletService.getWalletEntityById(walletId);
                 WalletAsset sellWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
@@ -132,11 +132,12 @@ public class TradeService {
 
                 walletService.syncWallet(walletId);
 
-                return tradeMapper.toResponse(sellTransaction);
+                return transactionMapper.toResponse(sellTransaction);
         }
 
         @Transactional
-        public TradeResponseDTO cashIn(Long walletId, CashTradeRequestDTO requestDTO, TransactionType transactionType) {
+        public TransactionResponseDTO cashIn(Long walletId, CashTradeRequestDTO requestDTO,
+                        TransactionType transactionType) {
                 Wallet wallet = walletService.getWalletEntityById(walletId);
 
                 WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
@@ -160,11 +161,11 @@ public class TradeService {
 
                 walletService.syncWallet(walletId);
 
-                return tradeMapper.toResponse(cashInTransaction);
+                return transactionMapper.toResponse(cashInTransaction);
         }
 
         @Transactional
-        public TradeResponseDTO cashOut(Long walletId, CashTradeRequestDTO requestDTO,
+        public TransactionResponseDTO cashOut(Long walletId, CashTradeRequestDTO requestDTO,
                         TransactionType transactionType) {
 
                 Wallet wallet = walletService.getWalletEntityById(walletId);
@@ -192,7 +193,7 @@ public class TradeService {
 
                 walletService.syncWallet(walletId);
 
-                return tradeMapper.toResponse(transaction);
+                return transactionMapper.toResponse(transaction);
         }
 
         // yardımcı fonksiyonlar
@@ -279,7 +280,7 @@ public class TradeService {
                 List<OpenPosition> openPositions;
 
                 if (optionalBuyTransactionIdForSell == null) {
-                        openPositions = openPositionService.getOpenOpenPositions(walletAssetId);
+                        openPositions = openPositionService.getOpenPositions(walletAssetId);
                 } else {
                         openPositions = List.of(openPositionService
                                         .getOpenPositionByWalletAssetAndTransactionId(walletAssetId,
