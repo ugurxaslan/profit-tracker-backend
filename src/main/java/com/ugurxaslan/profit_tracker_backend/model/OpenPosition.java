@@ -1,7 +1,7 @@
 package com.ugurxaslan.profit_tracker_backend.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.AssertFalse;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.math.BigDecimal;
@@ -35,9 +35,12 @@ public class OpenPosition extends BaseEntity {
     @JoinColumn(name = "wallet_asset_id", nullable = false)
     private WalletAsset walletAsset;
 
-    @AssertFalse
-    private boolean isTransactionTypeInvalid() {
-        return transaction != null && transaction.getTransactionType() == TransactionType.SELL
-                || transaction.getTransactionType() == TransactionType.CASH_OUT;
+    @AssertTrue(message = "Transaction type must be a buy type for an open position")
+    private boolean isTransactionTypeValid() {
+        return transaction != null &&
+                (transaction.getTransactionType() == TransactionType.BUY ||
+                        transaction.getTransactionType() == TransactionType.TRADE_CASH_IN ||
+                        transaction.getTransactionType() == TransactionType.CASH_IN);
     }
+
 }
