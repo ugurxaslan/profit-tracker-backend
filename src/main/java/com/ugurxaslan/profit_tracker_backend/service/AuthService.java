@@ -1,8 +1,12 @@
 package com.ugurxaslan.profit_tracker_backend.service;
 
 import com.ugurxaslan.profit_tracker_backend.dto.request.LoginRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.LoginResponseDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
+import com.ugurxaslan.profit_tracker_backend.mapper.UserMapper;
 import com.ugurxaslan.profit_tracker_backend.model.User;
+import com.ugurxaslan.profit_tracker_backend.repository.UserRepository;
 import com.ugurxaslan.profit_tracker_backend.security.JwtService;
 import com.ugurxaslan.profit_tracker_backend.service.entityService.UserService;
 
@@ -17,8 +21,26 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthService {
 
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+
+    public UserResponseDTO signup(CreateUserRequestDTO requestDTO) {
+        if (userRepository.existsByUsername(requestDTO.getUsername())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already in use");
+        }
+
+        if (userRepository.existsByEmail(requestDTO.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+        }
+
+        User userToCreate = userMapper.toEntityForCreate(requestDTO);
+        userToCreate.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+
+        User createdUser = userRepository.save(userToCreate);
+        return userMapper.toResponse(createdUser);
+    }
 
     public LoginResponseDTO login(LoginRequestDTO requestDTO) {
         User user;
