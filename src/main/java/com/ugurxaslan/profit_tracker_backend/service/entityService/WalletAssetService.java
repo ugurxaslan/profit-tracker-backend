@@ -1,5 +1,7 @@
 package com.ugurxaslan.profit_tracker_backend.service.entityService;
 
+import com.ugurxaslan.profit_tracker_backend.dto.response.WalletAssetResponseDTO;
+import com.ugurxaslan.profit_tracker_backend.mapper.WalletAssetMapper;
 import com.ugurxaslan.profit_tracker_backend.model.OpenPosition;
 import com.ugurxaslan.profit_tracker_backend.model.Asset;
 import com.ugurxaslan.profit_tracker_backend.model.Wallet;
@@ -10,6 +12,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +35,7 @@ public class WalletAssetService {
         private final WalletAssetRepository walletAssetRepository;
         private final OpenPositionService openPositionService;
         private final AssetService assetService;
+        private final WalletAssetMapper walletAssetMapper;
 
         @Transactional
         public Wallet recalculateWalletTotals(@NonNull Wallet wallet) {
@@ -83,6 +88,16 @@ public class WalletAssetService {
                 return walletAssets;
         }
 
+        @Transactional(readOnly = true)
+        public Page<WalletAssetResponseDTO> getWalletAssetsByWalletId(@NonNull Long walletId,
+                        @NonNull Pageable pageable) {
+                return walletAssetRepository.findByWallet_Id(walletId, pageable)
+                                .map(walletAsset -> {
+                                        recalculateWalletAssetFields(walletAsset);
+                                        return walletAssetMapper.toResponse(walletAsset);
+                                });
+        }
+
         @Transactional
         public WalletAsset updateWalletAsset(@NonNull Long walletId, @NonNull String assetSymbol) {
                 WalletAsset walletAsset = walletAssetRepository
@@ -113,7 +128,7 @@ public class WalletAssetService {
 
         @Transactional
         private void recalculateWalletAssetFields(@NonNull WalletAsset walletAsset) {
-                List<OpenPosition> openPositions = openPositionService.getOpenOpenPositions(walletAsset.getId());
+                List<OpenPosition> openPositions = openPositionService.getOpenPositions(walletAsset.getId());
 
                 BigDecimal quantity = openPositions.stream()
                                 .map(OpenPosition::getRemainingQuantity)
@@ -137,12 +152,12 @@ public class WalletAssetService {
                                                 RoundingMode.HALF_UP)
                                 : ZERO;
 
-                walletAsset.setQuantity(quantity.setScale(8, RoundingMode.HALF_UP));
+                walletAsset.setQuantity(quantity.setScale(2, RoundingMode.HALF_UP));
                 walletAsset.setTotalCost(totalCost.setScale(2, RoundingMode.HALF_UP));
                 walletAsset.setAverageCost(averageCost.setScale(2, RoundingMode.HALF_UP));
                 walletAsset.setTotalValue(totalValue.setScale(2, RoundingMode.HALF_UP));
-                walletAsset.setProfitLoss(profitLoss.setScale(8, RoundingMode.HALF_UP));
-                walletAsset.setProfitLossPercentage(profitLossPercentage.setScale(8, RoundingMode.HALF_UP));
+                walletAsset.setProfitLoss(profitLoss.setScale(2, RoundingMode.HALF_UP));
+                walletAsset.setProfitLossPercentage(profitLossPercentage.setScale(2, RoundingMode.HALF_UP));
         }
 
 }

@@ -12,6 +12,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +68,15 @@ public class WalletService {
                 .peek(this::recalculateWalletTotals)
                 .map(walletMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public Page<WalletResponseDTO> getAllWallets(@NonNull String currentUsername, @NonNull Pageable pageable) {
+        return walletRepository.findAllByUser_Username(currentUsername, pageable)
+                .map(wallet -> {
+                    recalculateWalletTotals(wallet);
+                    return walletMapper.toResponse(wallet);
+                });
     }
 
     @Transactional
