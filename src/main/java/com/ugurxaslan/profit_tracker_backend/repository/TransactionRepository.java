@@ -2,13 +2,14 @@ package com.ugurxaslan.profit_tracker_backend.repository;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.ugurxaslan.profit_tracker_backend.model.Transaction;
 
 @Repository
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+public interface TransactionRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
 
     List<Transaction> findByWallet_IdOrderByTransactionDateDesc(Long walletId);
 
