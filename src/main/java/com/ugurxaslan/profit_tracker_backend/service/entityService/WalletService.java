@@ -47,7 +47,11 @@ public class WalletService {
                 .walletName(requestedName)
                 .user(user)
                 .build();
-        recalculateWalletTotals(wallet);
+
+        wallet.setCash(BigDecimal.ZERO);
+        wallet.setTotalValue(BigDecimal.ZERO);
+        wallet.setPortfolioValue(BigDecimal.ZERO);
+
         Wallet savedWallet = walletRepository.saveAndFlush(Objects.requireNonNull(wallet));
         return walletMapper.toResponse(savedWallet);
     }
