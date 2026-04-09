@@ -6,6 +6,7 @@ import com.ugurxaslan.profit_tracker_backend.dto.response.LoginResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.mapper.UserMapper;
 import com.ugurxaslan.profit_tracker_backend.model.User;
+import com.ugurxaslan.profit_tracker_backend.model.Wallet;
 import com.ugurxaslan.profit_tracker_backend.repository.UserRepository;
 import com.ugurxaslan.profit_tracker_backend.security.JwtService;
 import com.ugurxaslan.profit_tracker_backend.service.entityService.UserService;
@@ -35,8 +36,14 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
 
+        Wallet defaultWallet = Wallet.builder()
+                .walletName("Default Wallet")
+                .build();
+
         User userToCreate = userMapper.toEntityForCreate(requestDTO);
+        defaultWallet.setUser(userToCreate);
         userToCreate.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+        userToCreate.getWalletList().add(defaultWallet);
 
         User createdUser = userRepository.save(userToCreate);
         return userMapper.toResponse(createdUser);
