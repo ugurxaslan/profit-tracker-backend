@@ -2,6 +2,7 @@ package com.ugurxaslan.profit_tracker_backend.service;
 
 import com.ugurxaslan.profit_tracker_backend.dto.request.LoginRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.RefreshTokenRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.LoginResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.mapper.UserMapper;
@@ -61,12 +62,36 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-        String token = jwtService.generateToken(user.getUsername());
+        return buildLoginResponse(user);
+    }
+
+    public LoginResponseDTO refresh(RefreshTokenRequestDTO requestDTO) {
+        if (!jwtService.isRefreshTokenValid(requestDTO.getRefreshToken())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+        }
+
+        String userName = jwtService.extractSubject(requestDTO.getRefreshToken());
+        User user;
+
+        try {
+            user = userService.getUserEntityByUsername(userName);
+        } catch (ResponseStatusException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+        }
+
+        return buildLoginResponse(user);
+    }
+
+    private LoginResponseDTO buildLoginResponse(User user) {
+        String accessToken = jwtService.generateAccessToken(user.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(user.getUsername());
 
         return LoginResponseDTO.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .tokenType("Bearer")
-                .expiresIn(jwtService.getExpirationMs())
+                .expiresIn(jwtService.getAccessExpirationMs())
+                .refreshExpiresIn(jwtService.getRefreshExpirationMs())
                 .build();
     }
 }

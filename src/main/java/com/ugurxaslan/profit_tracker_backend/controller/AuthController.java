@@ -2,6 +2,7 @@ package com.ugurxaslan.profit_tracker_backend.controller;
 
 import com.ugurxaslan.profit_tracker_backend.dto.request.LoginRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.request.CreateUserRequestDTO;
+import com.ugurxaslan.profit_tracker_backend.dto.request.RefreshTokenRequestDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.LoginResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.dto.response.UserResponseDTO;
 import com.ugurxaslan.profit_tracker_backend.service.AuthService;
@@ -29,5 +30,10 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDTO> signup(@Valid @RequestBody CreateUserRequestDTO requestDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(requestDTO));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDTO> refresh(@Valid @RequestBody RefreshTokenRequestDTO requestDTO) {
+        return ResponseEntity.ok(authService.refresh(requestDTO));
     }
 }
