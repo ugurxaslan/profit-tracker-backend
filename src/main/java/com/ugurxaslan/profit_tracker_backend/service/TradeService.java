@@ -303,11 +303,11 @@ public class TradeService {
                                 break;
 
                         BigDecimal positionQty = openPosition.getRemainingQuantity();
-
+                        Boolean isDeleted = false;
                         if (positionQty.compareTo(remainingConsumeQuantity) <= 0) {
 
                                 openPosition.setRemainingQuantity(BigDecimal.ZERO);
-                                openPositionService.deleteOpenPosition(openPosition);
+                                isDeleted = true;
                                 remainingConsumeQuantity = remainingConsumeQuantity.subtract(positionQty);
 
                         } else {
@@ -331,8 +331,15 @@ public class TradeService {
                                                 .build();
                                 closedPositionService.createClosedPosition(closedPosition);
                         }
-                        openPositionService.updateOpenPosition(openPosition);
+                        if (isDeleted) {
+                                openPosition.getWalletAsset().getOpenPositions().remove(openPosition);
+                                openPosition.getTransaction().setOpenPosition(null);
+                                openPositionService.deleteOpenPosition(openPosition);
+                        } else
+                                openPositionService.updateOpenPosition(openPosition);
+                        isDeleted = false;
                 }
+
         }
 
         private BigDecimal calculateProfitLoss(Transaction buyTransaction, Transaction sellTransaction) {
