@@ -57,9 +57,8 @@ public class TradeService {
                 WalletAsset cashWalletAsset = this.getOrCreateWalletAsset(wallet, "TRY");
                 WalletAsset buyWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset buyAsset = buyWalletAsset.getAsset();
-
+                assetControlIsCashForTrade(buyAsset.isCash());// trysatın alamazsın
                 if (useCash) {
-
                         this.cashControlForBuy(requestDTO, cashWalletAsset, buyAsset);
                 }
 
@@ -97,11 +96,10 @@ public class TradeService {
 
         @Transactional
         public TransactionResponseDTO sell(Long walletId, SellTradeRequestDTO requestDTO) {
-
                 Wallet wallet = walletService.getWalletEntityById(walletId);
                 WalletAsset sellWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset sellAsset = sellWalletAsset.getAsset();
-
+                assetControlIsCashForTrade(sellAsset.isCash());
                 this.assetControlForSell(requestDTO, sellWalletAsset);
 
                 BigDecimal unitPrice = resolveUnitPrice(requestDTO.getUnitPrice(), sellAsset);
@@ -354,5 +352,12 @@ public class TradeService {
                 return sellTransaction.getUnitCost().subtract(buyTransaction.getUnitCost())
                                 .divide(buyTransaction.getUnitCost(), 4, RoundingMode.HALF_UP)
                                 .multiply(BigDecimal.valueOf(100));
+        }
+
+        private void assetControlIsCashForTrade(boolean isCash) {
+                if (isCash) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "Cash asset cannot be traded. Only used for cash in/out.");
+                }
         }
 }
