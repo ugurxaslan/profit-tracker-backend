@@ -15,6 +15,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 
     List<Transaction> findByWallet_IdAndAsset_IdOrderByTransactionDateDesc(Long walletId, Long assetId);
 
+    Boolean existsByIdAndWallet_Id(Long transactionId, Long walletId);
+
     // buy or sell same transactions
     List<Transaction> findByWallet_IdAndAsset_IdAndTransactionTypeOrderByTransactionDateDesc(Long walletId,
             Long assetId, String transactionType);
