@@ -35,7 +35,7 @@ public class TradeController {
 
     @PreAuthorize("@walletSecurity.isWalletOwner(#walletId, authentication) and " +
             "(#requestDTO.optionalBuyTransactionIdForSell == null or " +
-            "@transactionSecurity.isTransactionOwner(#requestDTO.optionalBuyTransactionIdForSell, authentication))")
+            "@transactionSecurity.isTransactionOwner(#walletId, #requestDTO.optionalBuyTransactionIdForSell))")
 
     @PostMapping("/wallets/{walletId}/sell")
     public ResponseEntity<TransactionResponseDTO> sell(
