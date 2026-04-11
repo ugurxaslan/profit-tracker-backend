@@ -9,4 +9,5 @@ import org.mapstruct.ReportingPolicy;
 public interface AssetMapper {
 
     AssetResponseDTO toResponse(Asset asset);
+
 }

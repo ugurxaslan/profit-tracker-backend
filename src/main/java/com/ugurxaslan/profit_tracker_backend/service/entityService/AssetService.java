@@ -48,6 +48,7 @@ public class AssetService {
                                 .setName(item.name() == null || item.name().isBlank() ? item.symbol().toUpperCase()
                                         : item.name());
                         createdAsset.setSymbol(item.symbol());
+                        createdAsset.setCash(item.isCash);
                         return createdAsset;
                     });
 
@@ -56,10 +57,9 @@ public class AssetService {
         }
     }
 
-    public record MarketAssetItem(String name, String symbol, BigDecimal currentPrice) {
+    public record MarketAssetItem(String name, String symbol, BigDecimal currentPrice, boolean isCash) {
     }
 
-    // service arası entity aktarımı için
     @Transactional(readOnly = true)
     public Asset getAssetEntityBySymbol(@NonNull String symbol) {
         return assetRepository.findBySymbol(symbol.trim().toUpperCase())

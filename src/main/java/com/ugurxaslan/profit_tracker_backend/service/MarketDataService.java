@@ -62,14 +62,14 @@ public class MarketDataService {
         List<AssetService.MarketAssetItem> items = new ArrayList<>();
 
         if (goldPrice != null) {
-            items.add(new AssetService.MarketAssetItem("Gram Altın", "XAUTRYG", goldPrice));
+            items.add(new AssetService.MarketAssetItem("Gram Altın", "XAUTRYG", goldPrice, false));
         }
 
         if (silverPrice != null) {
-            items.add(new AssetService.MarketAssetItem("Gram Gümüş", "XAGTRYG", silverPrice));
+            items.add(new AssetService.MarketAssetItem("Gram Gümüş", "XAGTRYG", silverPrice, false));
         }
 
-        items.add(new AssetService.MarketAssetItem("Türk Lirası", "TRY", new BigDecimal("1.00")));
+        items.add(new AssetService.MarketAssetItem("Türk Lirası", "TRY", new BigDecimal("1.00"), true));
 
         log.info("Fetched market data: {} item(s)", items);
 

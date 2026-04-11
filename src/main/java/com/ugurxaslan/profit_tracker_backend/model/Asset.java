@@ -27,4 +27,7 @@ public class Asset extends BaseEntity {
     @Column(name = "current_price", nullable = false, precision = 19, scale = 2)
     private BigDecimal currentPrice;
 
+    @Column(name = "is_cash", nullable = false)
+    private boolean isCash;
+
 }

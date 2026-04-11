@@ -18,4 +18,5 @@ public class AssetResponseDTO {
     private String name;
     private String symbol;
     private BigDecimal currentPrice;
+    private boolean isCash;
 }
