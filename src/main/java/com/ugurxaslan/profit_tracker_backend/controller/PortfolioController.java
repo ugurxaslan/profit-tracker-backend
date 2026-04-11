@@ -39,6 +39,14 @@ public class PortfolioController {
         }
 
         @PreAuthorize("@walletSecurity.isWalletOwner(#walletId, authentication)")
+        @GetMapping("/wallets/{walletId}")
+        public ResponseEntity<WalletResponseDTO> getWallet(
+                        @PathVariable Long walletId) {
+                WalletResponseDTO wallet = portfolioService.getWallet(walletId);
+                return ResponseEntity.ok(wallet);
+        }
+
+        @PreAuthorize("@walletSecurity.isWalletOwner(#walletId, authentication)")
         @GetMapping("/wallets/{walletId}/assets")
         public ResponseEntity<Page<WalletAssetResponseDTO>> getWalletAssets(
                         @PathVariable Long walletId,
@@ -81,5 +89,15 @@ public class PortfolioController {
                 Page<TransactionResponseDTO> transactions = portfolioService.getTransactions(walletId, filter,
                                 pageable);
                 return ResponseEntity.ok(transactions);
+        }
+
+        @PreAuthorize("@walletSecurity.isWalletOwner(#walletId, authentication) and " +
+                        "@transactionSecurity.isTransactionOwner(#walletId, #transactionId)")
+        @GetMapping("/wallets/{walletId}/transactions/{transactionId}")
+        public ResponseEntity<TransactionResponseDTO> getTransaction(
+                        @PathVariable Long walletId,
+                        @PathVariable Long transactionId) {
+                TransactionResponseDTO transaction = portfolioService.getTransaction(transactionId);
+                return ResponseEntity.ok(transaction);
         }
 }

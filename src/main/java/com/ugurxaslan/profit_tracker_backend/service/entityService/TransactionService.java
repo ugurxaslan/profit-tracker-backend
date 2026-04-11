@@ -67,6 +67,12 @@ public class TransactionService {
                 .map(transactionMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
+    public TransactionResponseDTO getTransaction(@NonNull Long transactionId) {
+        Transaction transaction = getTransactionEntityById(transactionId);
+        return transactionMapper.toResponse(transaction);
+    }
+
     @Transactional
     public Transaction createTransaction(@NonNull Transaction transaction) {
 

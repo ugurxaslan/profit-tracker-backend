@@ -47,6 +47,10 @@ public class PortfolioService {
         return walletService.getAllWallets(currentUsername, pageable);
     }
 
+    public WalletResponseDTO getWallet(Long walletId) {
+        return walletService.getWalletById(walletId);
+    }
+
     public Page<WalletAssetResponseDTO> getWalletAssets(Long walletId, Pageable pageable) {
         return walletAssetService.getWalletAssetsByWalletId(walletId, pageable);
     }
@@ -70,5 +74,9 @@ public class PortfolioService {
     public Page<TransactionResponseDTO> getTransactions(Long walletId, TransactionFilterRequestDTO filter,
             Pageable pageable) {
         return transactionService.getTransactionsByFilter(walletId, filter, pageable);
+    }
+
+    public TransactionResponseDTO getTransaction(Long transactionId) {
+        return transactionService.getTransaction(transactionId);
     }
 }
