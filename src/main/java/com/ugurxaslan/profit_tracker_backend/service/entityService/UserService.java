@@ -34,6 +34,11 @@ public class UserService {
 	}
 
 	@Transactional(readOnly = true)
+	public UserResponseDTO getUserByUsername(@NonNull String username) {
+		return userMapper.toResponse(getUserEntityByUsername(username));
+	}
+
+	@Transactional(readOnly = true)
 	public List<UserResponseDTO> getAllUsers() {
 		return userRepository.findAll()
 				.stream()
@@ -41,6 +46,7 @@ public class UserService {
 				.toList();
 	}
 
+	@Transactional
 	public UserResponseDTO updateUser(@NonNull Long id, UpdateUserRequestDTO requestDTO) {
 		User existingUser = getUserEntityById(id);
 

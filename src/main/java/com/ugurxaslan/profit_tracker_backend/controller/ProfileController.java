@@ -36,6 +36,12 @@ public class ProfileController {
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getMe(Authentication authentication) {
+        UserResponseDTO user = profileService.getUserByUsername(authentication.getName());
+        return ResponseEntity.ok(user);
+    }
+
     @PutMapping("/users/{id}")
     @PreAuthorize("@userSecurity.isUserOwner(#id, authentication) or hasRole('ADMIN')")
     public ResponseEntity<UserResponseDTO> updateUser(

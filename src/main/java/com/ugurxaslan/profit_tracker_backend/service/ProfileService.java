@@ -23,6 +23,10 @@ public class ProfileService {
         return userService.getUserById(id);
     }
 
+    public UserResponseDTO getUserByUsername(String username) {
+        return userService.getUserByUsername(username);
+    }
+
     public UserResponseDTO updateUser(Long id, UpdateUserRequestDTO requestDTO) {
         return userService.updateUser(id, requestDTO);
     }
