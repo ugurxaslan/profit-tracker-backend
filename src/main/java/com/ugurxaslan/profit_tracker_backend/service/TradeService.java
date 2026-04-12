@@ -59,10 +59,10 @@ public class TradeService {
                 Asset buyAsset = buyWalletAsset.getAsset();
                 assetControlIsCashForTrade(buyAsset.isCash());// trysatın alamazsın
                 if (useCash) {
-                        this.cashControlForBuy(requestDTO, cashWalletAsset, buyAsset);
+                        this.cashControlForBuy(requestDTO, cashWalletAsset);
                 }
 
-                BigDecimal unitPrice = resolveUnitPrice(requestDTO.getUnitPrice(), buyAsset);
+                BigDecimal unitPrice = requestDTO.getUnitPrice();
                 BigDecimal totalCost = roundMoney(requestDTO.getQuantity().multiply(unitPrice));
 
                 Transaction buyTransactionToSave = Transaction.builder()
@@ -99,10 +99,10 @@ public class TradeService {
                 Wallet wallet = walletService.getWalletEntityById(walletId);
                 WalletAsset sellWalletAsset = this.getOrCreateWalletAsset(wallet, requestDTO.getAssetSymbol());
                 Asset sellAsset = sellWalletAsset.getAsset();
-                assetControlIsCashForTrade(sellAsset.isCash());
+                this.assetControlIsCashForTrade(sellAsset.isCash());
                 this.assetControlForSell(requestDTO, sellWalletAsset);
 
-                BigDecimal unitPrice = resolveUnitPrice(requestDTO.getUnitPrice(), sellAsset);
+                BigDecimal unitPrice = requestDTO.getUnitPrice();
                 BigDecimal totalCost = roundMoney(requestDTO.getQuantity().multiply(unitPrice));
 
                 Transaction sellTransactionToSave = Transaction.builder()
@@ -199,13 +199,6 @@ public class TradeService {
                 return requestDate != null ? requestDate : LocalDateTime.now();
         }
 
-        private BigDecimal resolveUnitPrice(BigDecimal unitPrice, Asset asset) {
-                if (unitPrice != null) {
-                        return unitPrice;
-                }
-                return asset.getCurrentPrice();
-        }
-
         private BigDecimal resolveFee(BigDecimal fee) {
                 return fee != null ? fee : BigDecimal.ZERO;
         }
@@ -226,10 +219,8 @@ public class TradeService {
                                 });
         }
 
-        private void cashControlForBuy(BuyTradeRequestDTO requestDTO, WalletAsset cashWalletAsset, Asset buyAsset) {
-                BigDecimal requiredCash = roundMoney(requestDTO.getQuantity().multiply(
-                                resolveUnitPrice(requestDTO.getUnitPrice(), buyAsset)))
-                                .add(resolveFee(requestDTO.getFee()));
+        private void cashControlForBuy(BuyTradeRequestDTO requestDTO, WalletAsset cashWalletAsset) {
+                BigDecimal requiredCash = roundMoney(requestDTO.getQuantity().multiply(requestDTO.getUnitPrice()));
 
                 if (cashWalletAsset.getQuantity().multiply(cashWalletAsset.getAsset().getCurrentPrice())
                                 .compareTo(requiredCash) < 0) {
@@ -314,7 +305,9 @@ public class TradeService {
                         }
                         if (sellTransaction != null) {
                                 Transaction buyTransaction = openPosition.getTransaction();
-                                BigDecimal profitLoss = calculateProfitLoss(buyTransaction, sellTransaction);
+                                BigDecimal usedQuantity = positionQty.subtract(openPosition.getRemainingQuantity());
+                                BigDecimal profitLoss = calculateProfitLoss(buyTransaction, sellTransaction,
+                                                usedQuantity);
                                 BigDecimal profitLossPercentage = calculateProfitLossPercentage(buyTransaction,
                                                 sellTransaction);
                                 ClosedPosition closedPosition = ClosedPosition.builder()
@@ -325,7 +318,7 @@ public class TradeService {
                                                 .buyTransaction(buyTransaction)
                                                 .sellTransaction(sellTransaction)
                                                 .wallet(sellTransaction.getWallet())
-                                                .usedQuantity(positionQty.subtract(openPosition.getRemainingQuantity()))
+                                                .usedQuantity(usedQuantity)
                                                 .build();
                                 closedPositionService.createClosedPosition(closedPosition);
                         }
@@ -340,9 +333,10 @@ public class TradeService {
 
         }
 
-        private BigDecimal calculateProfitLoss(Transaction buyTransaction, Transaction sellTransaction) {
+        private BigDecimal calculateProfitLoss(Transaction buyTransaction, Transaction sellTransaction,
+                        BigDecimal UsedQuantity) {
                 return sellTransaction.getUnitCost().subtract(buyTransaction.getUnitCost())
-                                .multiply(sellTransaction.getQuantity());
+                                .multiply(UsedQuantity);
         }
 
         private BigDecimal calculateProfitLossPercentage(Transaction buyTransaction, Transaction sellTransaction) {
