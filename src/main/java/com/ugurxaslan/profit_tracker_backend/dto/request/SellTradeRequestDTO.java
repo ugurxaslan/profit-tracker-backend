@@ -24,6 +24,7 @@ public class SellTradeRequestDTO {
     @Digits(integer = 19, fraction = 2, message = "Quantity can have at most 2 decimal places")
     private BigDecimal quantity;
 
+    @NotNull(message = "Unit price must not be null")
     @DecimalMin(value = "0.01", inclusive = true, message = "Unit price must be greater than 0")
     @Digits(integer = 19, fraction = 2, message = "Unit price can have at most 2 decimal places")
     private BigDecimal unitPrice;
