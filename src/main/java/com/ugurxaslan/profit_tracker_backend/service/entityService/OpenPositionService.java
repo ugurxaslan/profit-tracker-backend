@@ -59,7 +59,7 @@ public class OpenPositionService {
     @Transactional(readOnly = true)
     public Page<OpenPositionResponseDTO> getOpenPositionsByWalletId(@NonNull Long walletId,
             @NonNull Pageable pageable) {
-        return openPositionRepository.findByWalletAsset_Wallet_Id(walletId, pageable)
+        return openPositionRepository.findByWalletAsset_Wallet_IdAndAsset_IsCashFalse(walletId, pageable)
                 .map(this::calculateAndMapToResponse);
     }
 
@@ -67,7 +67,7 @@ public class OpenPositionService {
     public Page<OpenPositionResponseDTO> getOpenPositionsByWalletAssetId(
             @NonNull Long walletAssetId,
             @NonNull Pageable pageable) {
-        return openPositionRepository.findByWalletAsset_Id(walletAssetId, pageable)
+        return openPositionRepository.findByWalletAsset_IdAndAsset_IsCashFalse(walletAssetId, pageable)
                 .map(this::calculateAndMapToResponse);
     }
 
