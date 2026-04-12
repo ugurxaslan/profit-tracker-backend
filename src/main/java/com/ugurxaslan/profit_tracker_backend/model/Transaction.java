@@ -2,6 +2,8 @@ package com.ugurxaslan.profit_tracker_backend.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.ugurxaslan.profit_tracker_backend.enums.TransactionType;
 
@@ -46,7 +48,14 @@ public class Transaction extends BaseEntity {
     @JoinColumn(name = "asset_id", nullable = false)
     private Asset asset;
 
-    @OneToOne(mappedBy = "transaction", orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "transaction", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private OpenPosition openPosition;
 
+    @Builder.Default
+    @OneToMany(mappedBy = "buyTransaction", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ClosedPosition> buyClosedPositions = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "sellTransaction", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ClosedPosition> sellClosedPositions = new ArrayList<>();
 }
