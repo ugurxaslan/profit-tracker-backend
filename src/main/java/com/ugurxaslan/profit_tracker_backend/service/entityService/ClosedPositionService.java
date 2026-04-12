@@ -1,6 +1,5 @@
 package com.ugurxaslan.profit_tracker_backend.service.entityService;
 
-import java.util.List;
 import java.util.Objects;
 
 import org.springframework.data.domain.Page;
@@ -32,11 +31,6 @@ public class ClosedPositionService {
     private final WalletAssetRepository walletAssetRepository;
 
     @Transactional(readOnly = true)
-    public List<ClosedPosition> getClosedPositionsByWalletId(@NonNull Long walletId) {
-        return closedPositionRepository.findAllByWallet_IdOrderBySellTransaction_TransactionDateDesc(walletId);
-    }
-
-    @Transactional(readOnly = true)
     public Page<ClosedPositionResponseDTO> getClosedPositionsByWalletId(@NonNull Long walletId,
             @NonNull Pageable pageable) {
         return closedPositionRepository.findByWallet_Id(walletId, pageable)
@@ -51,7 +45,7 @@ public class ClosedPositionService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet asset not found"));
 
         return closedPositionRepository
-                .findByWallet_IdAndSellTransaction_Asset_Symbol(walletId, walletAsset.getAsset().getSymbol(),
+                .findByWallet_IdAndBuyTransaction_Asset_Symbol(walletId, walletAsset.getAsset().getSymbol(),
                         pageable)
                 .map(closedPositionMapper::toResponse);
     }

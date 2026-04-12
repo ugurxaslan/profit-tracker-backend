@@ -16,6 +16,6 @@ public interface ClosedPositionRepository extends JpaRepository<ClosedPosition, 
 
     Page<ClosedPosition> findByWallet_Id(Long walletId, Pageable pageable);
 
-    Page<ClosedPosition> findByWallet_IdAndSellTransaction_Asset_Symbol(Long walletId, String assetSymbol,
+    Page<ClosedPosition> findByWallet_IdAndBuyTransaction_Asset_Symbol(Long walletId, String assetSymbol,
             Pageable pageable);
 }
