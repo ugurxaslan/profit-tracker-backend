@@ -13,6 +13,7 @@ Bu komut, gerekli servisleri (veritabanını ve veritabanı arayüzünü) başla
 Servisler başlatıldıktan sonra, Spring Boot uygulamasını başlatmak için proje dizininde aşağıdaki komutu çalıştırabilirsiniz:
 
 ```bash
+./mvnw clean install
 ./mvnw spring-boot:run
 ```
 
